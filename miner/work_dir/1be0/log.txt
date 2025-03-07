@@ -1,0 +1,38 @@
+Caver computation started.
+Merging all PDB files into one multimodel PDB file.
+Settings loaded from:
+work_dir/1be0/config.txt
+
+Basic parameters:
+starting_point_atom 1017 1026 1404
+probe_radius 0.9
+shell_radius 3.0
+shell_depth 4.0
+frame_weighting_coefficient 1.0
+frame_clustering_threshold 1.0
+
+*** Processing 1be0.pdb ***
+0 redundant tunnels removed.
+0 tunnels stored.
+
+Loading tunnels from /home/erikna/whatcat/miner/work_dir/1be0/data/tunnels/tunnels_1be0.pdb.obj
+Loaded 0 tunnels for 1be0.pdb.
+0 tunnels successfully loaded.
+
+Leaving only the cheapest tunnel per cluster per snapshot - 0 tunnels kept.
+Statistical analysis of results started.
+Saving summary information.
+Saving tunnel characteristics.
+Saving tunnel-lining residues and atoms.
+
+Finished successfully.
+
+-----------------------------------------------------------------------
+ Thank you for using CAVER, please cite:
+
+ Chovancova, E., Pavelka, A., Benes, P., Strnad, O., Brezovsky, J.,
+ Kozlikova, B., Gora, A., Sustr, V., Klvana, M., Medek, P.,
+ Biedermannova, L., Sochor, J. Damborsky, J. (2012) CAVER 3.0: A Tool
+ for the Analysis of Transport Pathways in Dynamic Protein Structures.
+ PLoS Comput Biol 8: e1002708. doi:10.1371/journal.pcbi.1002708
+-----------------------------------------------------------------------

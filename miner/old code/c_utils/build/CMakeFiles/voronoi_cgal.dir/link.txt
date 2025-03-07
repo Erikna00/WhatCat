@@ -1,0 +1,1 @@
+/home/erikna/miniconda3/envs/miner/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/voronoi_cgal.dir/link.d -shared  -o voronoi_cgal.so CMakeFiles/voronoi_cgal.dir/voronoi_cgal.cpp.o  /home/erikna/miniconda3/envs/miner/lib/libgmpxx.so /home/erikna/miniconda3/envs/miner/lib/libmpfr.so /home/erikna/miniconda3/envs/miner/lib/libgmp.so -pthread

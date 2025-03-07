@@ -1,0 +1,8 @@
+MODEL 1
+REMARK   1 TUNNEL 1 LENGTH 2.66 BOTTLENECK 0.14
+ATOM      1 O    PTH X   1      21.588  94.336  41.263  1.00  0.14           O
+ATOM      2 C    PTH X   1      21.745  94.033  40.103  1.00  0.84           C
+ATOM      3 C    PTH X   1      21.618  94.182  39.778  1.00  0.99           C
+ATOM      4 C    PTH X   1      22.018  94.224  39.379  1.00  1.11           C
+ATOM      5 C    PTH X   1      22.414  94.036  39.617  1.00  0.98           C
+ENDMDL

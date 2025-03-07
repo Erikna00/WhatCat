@@ -1,0 +1,3 @@
+/home/erikna/whatcat/miner/c_utils/build/CMakeFiles/voronoi_cgal.dir
+/home/erikna/whatcat/miner/c_utils/build/CMakeFiles/edit_cache.dir
+/home/erikna/whatcat/miner/c_utils/build/CMakeFiles/rebuild_cache.dir
