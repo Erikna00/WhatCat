@@ -1,3 +1,110 @@
+def bulk_vertices_check(self):
+        "checks if a point is outside the convex hull"
+
+        # Calculate convex hull for the protein from the atom positions
+        self.hull = ConvexHull(self.positions)
+        self.bulk_vertices_index = []
+
+        # Create a Delaunay triangulation of the hull points for faster point-in-hull check
+        hull_triangulation = Delaunay(self.hull.points)
+
+        #classify bulk and nonbulk
+        for i, vertex in enumerate(self.graph_node_positions):
+            if hull_triangulation.find_simplex(vertex) < 0:
+                self.bulk_vertices_index.append(i)
+
+        return self.bulk_vertices_index   
+
+def find_tunnels(self, start_point=None, max_tunnels=10, min_bottleneck=1.0):
+        """
+        Find tunnels from a starting point to bulk solvent.
+        
+        Parameters:
+        -----------
+        start_point : array-like or None
+            Starting point coordinates. If None, use previously set start_point.
+        max_tunnels : int
+            Maximum number of tunnels to find
+        min_bottleneck : float
+            Minimum bottleneck radius (Å) for a valid tunnel
+            
+        Returns:
+        --------
+        pd.DataFrame
+            DataFrame containing tunnel information
+        """
+        # Determine the starting point
+        if start_point is not None:
+            self.start_point = np.array(start_point)
+        elif self.start_point is None:
+            raise ValueError("No starting point provided or previously set")
+            
+        # Find the closest valid vertex to the starting point
+        self.start_vertex = self._find_closest_vertex_to_point(self.start_point)
+        print(f"start vertex: {self.start_vertex}")
+        
+        # Prepare tunnel data storage
+        self.tunnels = []
+        tunnel_data = []
+        
+        bulk_vertices_to_search = self.bulk_vertices_index
+        
+        # Calculate distances from start vertex to all bulk vertices
+        bulk_coords = self.graph_node_positions[bulk_vertices_to_search]
+        start_coord = self.graph_node_positions[self.start_vertex]
+        distances = np.linalg.norm(bulk_coords - start_coord, axis=1)
+        
+        # Sort bulk vertices by distance to starting point (closer first)
+        sorted_indices = np.argsort(distances)
+        sorted_bulk_vertices = [bulk_vertices_to_search[i] for i in sorted_indices]
+        
+        # Find tunnels to each bulk solvent vertex
+        for i, bulk_idx in enumerate(sorted_bulk_vertices):
+            if len(self.tunnels) >= max_tunnels:
+                break
+                
+            try:
+                # Find shortest path from start to this bulk vertex
+                path = nx.shortest_path(self.graph, self.start_vertex, bulk_idx, weight='weight')
+                
+                # Extract path details
+                path_vertices = [self.graph_node_positions[idx] for idx in path]
+                path_rmax = [self.graph.nodes[idx]['rmax'] for idx in path]
+                
+                # Only keep tunnels with sufficient bottleneck radius
+                min_rmax = min(path_rmax)
+                if min_rmax >= min_bottleneck:
+                    # Calculate length efficiently
+                    path_length = sum(self.graph[path[i]][path[i+1]]['distance'] for i in range(len(path)-1))
+                    
+                    self.tunnels.append({
+                        'path_indices': path,
+                        'path_vertices': path_vertices,
+                        'path_rmax': path_rmax,
+                        'length': path_length,
+                        'bottleneck': min_rmax,
+                        'bottleneck_idx': path_rmax.index(min_rmax)
+                    })
+                    
+                    # Add data for DataFrame
+                    tunnel_data.append({
+                        'tunnel_id': len(self.tunnels),
+                        'length': path_length,
+                        'bottleneck': min_rmax,
+                        'bottleneck_position': path_vertices[path_rmax.index(min_rmax)],
+                        'start': path_vertices[0],
+                        'end': path_vertices[-1],
+                        'num_points': len(path),
+                        'start_point': self.start_point
+                    })
+            except nx.NetworkXNoPath:
+                continue
+        
+        # Create DataFrame with tunnel data
+        self.tunnel_dataframe = pd.DataFrame(tunnel_data) if tunnel_data else pd.DataFrame()
+        return self.tunnel_dataframe
+
+
 # Define this helper function at the class or module level (outside any method)
 @staticmethod
 def _process_vertex_chunk(chunk_data):

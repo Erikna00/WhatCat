@@ -1,0 +1,51 @@
+MODEL 1
+REMARK   1 TUNNEL 1 LENGTH 25.31 BOTTLENECK 1.46
+ATOM      1 C    PTH X   1      27.438  31.794  30.385  1.00  1.60           C
+ATOM      2 O    PTH X   1      26.701  30.842  30.404  1.00  1.46           O
+ATOM      3 C    PTH X   1      27.079  31.485  30.640  1.00  1.76           C
+ATOM      4 C    PTH X   1      26.154  31.949  31.547  1.00  1.47           C
+ATOM      5 C    PTH X   1      22.866  41.455  51.059  1.00  9.04           C
+ENDMDL
+MODEL 2
+REMARK   1 TUNNEL 2 LENGTH 27.02 BOTTLENECK 1.46
+ATOM      1 C    PTH X   2      27.438  31.794  30.385  1.00  1.60           C
+ATOM      2 O    PTH X   2      26.701  30.842  30.404  1.00  1.46           O
+ATOM      3 C    PTH X   2      27.079  31.485  30.640  1.00  1.76           C
+ATOM      4 C    PTH X   2      26.154  31.949  31.547  1.00  1.47           C
+ATOM      5 C    PTH X   2      22.866  41.455  51.059  1.00  9.04           C
+ATOM      6 C    PTH X   2      22.740  39.786  50.721  1.00  7.90           C
+ENDMDL
+MODEL 3
+REMARK   1 TUNNEL 3 LENGTH 32.58 BOTTLENECK 1.46
+ATOM      1 C    PTH X   3      27.438  31.794  30.385  1.00  1.60           C
+ATOM      2 O    PTH X   3      26.701  30.842  30.404  1.00  1.46           O
+ATOM      3 C    PTH X   3      27.079  31.485  30.640  1.00  1.76           C
+ATOM      4 C    PTH X   3      26.154  31.949  31.547  1.00  1.47           C
+ATOM      5 C    PTH X   3      22.866  41.455  51.059  1.00  9.04           C
+ATOM      6 C    PTH X   3      22.651  35.734  46.583  1.00  3.58           C
+ENDMDL
+MODEL 4
+REMARK   1 TUNNEL 4 LENGTH 25.29 BOTTLENECK 1.46
+ATOM      1 C    PTH X   4      27.438  31.794  30.385  1.00  1.60           C
+ATOM      2 O    PTH X   4      26.701  30.842  30.404  1.00  1.46           O
+ATOM      3 C    PTH X   4      27.079  31.485  30.640  1.00  1.76           C
+ATOM      4 C    PTH X   4      26.154  31.949  31.547  1.00  1.47           C
+ATOM      5 C    PTH X   4      27.934  20.392  50.095  1.00  2.03           C
+ENDMDL
+MODEL 5
+REMARK   1 TUNNEL 5 LENGTH 31.07 BOTTLENECK 0.68
+ATOM      1 C    PTH X   5      27.438  31.794  30.385  1.00  1.60           C
+ATOM      2 C    PTH X   5      26.701  30.842  30.404  1.00  1.46           C
+ATOM      3 C    PTH X   5      27.079  31.485  30.640  1.00  1.76           C
+ATOM      4 O    PTH X   5      24.134  32.686  29.749  1.00  0.68           O
+ATOM      5 C    PTH X   5      28.971  19.263  51.224  1.00  3.44           C
+ENDMDL
+MODEL 6
+REMARK   1 TUNNEL 6 LENGTH 36.46 BOTTLENECK 0.68
+ATOM      1 C    PTH X   6      27.438  31.794  30.385  1.00  1.60           C
+ATOM      2 C    PTH X   6      26.701  30.842  30.404  1.00  1.46           C
+ATOM      3 C    PTH X   6      27.079  31.485  30.640  1.00  1.76           C
+ATOM      4 O    PTH X   6      24.134  32.686  29.749  1.00  0.68           O
+ATOM      5 C    PTH X   6      28.971  19.263  51.224  1.00  3.44           C
+ATOM      6 C    PTH X   6      32.228  16.889  54.806  1.00  8.20           C
+ENDMDL
