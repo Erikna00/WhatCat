@@ -1,8 +1,116 @@
-
+###
+#Code belonging to Miner
+###
+def main_workflow(receptor_pdb, ligand_file, first_frame=1, last_frame=1, time_sparsity=1):
+    # Create a working subdirectory named after the receptor base name
+    receptor_base = os.path.splitext(os.path.basename(receptor_pdb))[0]
+    main_workdir = "work_dir"
+    os.makedirs(main_workdir, exist_ok=True)
+    
+    # Prepare receptor and ligand using OpenBabel conversions
+    receptor_pdbqt = prepare_protein(receptor_pdb)
+    ligand_pdbqt = prepare_ligand(ligand_file)
+    
+    # Run CAVER:
+    # This will copy the receptor PDB into a subdir and run CAVER with our modified config.
+    tunnels_file, work_dir = Miner(caver_path="/home/erikna/compchem/WhatCat/miner/caver").run_caver(
+        receptor_file=receptor_pdb,
+        out_dir=main_workdir,
+        first_frame=first_frame,
+        last_frame=last_frame,
+        time_sparsity=time_sparsity
+    )
+    
+    # Load tunnels using pyCaverDock's load_tunnel.
+    tunnels = load_tunnel(tunnels_file)
+    if not isinstance(tunnels, list):
+        tunnels = [tunnels]
+    
+    # For each tunnel, create a subdirectory and run a CaverDock run.
+    for idx, tunnel in enumerate(tunnels, start=1):
+        tunnel_dir = os.path.join(work_dir, f"tunnel_{idx}")
+        os.makedirs(tunnel_dir, exist_ok=True)
+        # Discretize the tunnel (delta = 0.3 Å as an example)
+        disc_tunnel = discretize_tunnel(tunnel, delta=0.3)
+        # Run CaverDock for this tunnel using pyCaverDock
+        traj = Miner().run_caverdock(
+            receptor_pdbqt=receptor_pdbqt,
+            ligand_pdbqt=ligand_pdbqt,
+            tunnel=disc_tunnel,
+            work_dir=work_dir,
+            output_subdir=tunnel_dir,
+            direction="OUT",
+            trajectory_type="LOWERBOUND",
+            exhaustiveness=8
+        )
+        # Save energy profile from the trajectory
+        profile_file = os.path.join(tunnel_dir, "profile.dat")
+        traj.energy_profile.write_to_dat(profile_file)
+        print(f"Energy profile for tunnel {idx} saved to {profile_file}")
+        
+        # Convert energy profile to DataFrame and save CSV
+        energy_df = traj.energy_profile.to_dataframe()  # assuming such a method exists
+        csv_file = os.path.join(tunnel_dir, "analysis.csv")
+        energy_df.to_csv(csv_file, index=False)
+        print(f"Energy analysis for tunnel {idx} saved to {csv_file}")
+        
+        # Plot energy profile and save PNG
+        plot = EnergyProfilePlot(f"{receptor_base}_tunnel_{idx}_profile", traj.energy_profile, TrajectoryType.LOWERBOUND)
+        png_file = os.path.join(tunnel_dir, "energy_profile.png")
+        plot_results([plot], output=png_file, share_axes=True)
+        print(f"Energy profile plot for tunnel {idx} saved to {png_file}")
+    
+    print("Workflow complete.")
 
 ###
 #code belonging to ProteinTunnelAnalyzer
 ###
+
+def bulk_vertices_check(self):
+        "checks if a graph node is outside the convex hull"
+
+        # Calculate convex hull for the protein from the vdw radii positions
+        self.hull = ConvexHull(self.enhanced_positions)
+        self.bulk_vertices_index = []
+
+        # Create a Delaunay triangulation of the hull points for faster point-in-hull check
+        hull_triangulation = Delaunay(self.hull.points)
+
+        #classify bulk and nonbulk
+        for i, vertex in enumerate(self.graph_node_positions):
+            if hull_triangulation.find_simplex(vertex) < 0:
+                self.bulk_vertices_index.append(i)
+
+        unclassified_idx = range(len(self.graph.nodes)).remove(self.bulk_vertices_index)
+        search_bulk_idx = self.bulk_vertices_index
+        node_tree = KDTree(self.graph_node_positions)
+
+        #TODO implement advancing
+        #start advancing into the protein
+        while True:
+            # Find all points within the search radius of the current bulk points
+            new_bulk_indices = []
+
+            for idx in search_bulk_idx:
+                neighbors = node_tree.query_ball_point(self.graph.nodes[idx], self.probe_radius)
+
+                #For nonbulk neighbors check if halfway distance rmax is smaller than self.probe_radii
+                #And distance between points is less than 5
+                #then assign bulk
+                for neighbor in filter(lambda n: n not in search_bulk_idx, neighbors):
+
+
+            # Remove already classified bulk points
+            new_bulk_indices.difference_update(np.where(search_bulk_idx)[0])
+            
+
+            if not new_bulk_indices:
+                break  # No new points to add, exit the loop
+
+            #add newly assigned bulk to search_bulk_idx
+            bulk_mask[list(new_bulk_indices)] = True
+
+        return self.bulk_vertices_index   
 
 def bulk_vertices_check(self):
         "checks if a point is outside the convex hull"
