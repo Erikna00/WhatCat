@@ -16,9 +16,9 @@ last_frame 1
 # TUNNEL CALCULATION
 #*****************************
 
-starting_point_atom 1017  
-starting_point_atom 1404
-starting_point_atom 1026
+starting_point_coordinates 25.994804300307816 31.300555483650815 30.739844306367118
+starting_point_coordinates 25.994804300307816 31.300555483650815 30.739844306367118
+starting_point_coordinates 25.994804300307816 31.300555483650815 30.739844306367118
 
 probe_radius 0.9
 shell_radius 3

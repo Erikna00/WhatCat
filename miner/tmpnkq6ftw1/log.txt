@@ -1,10 +1,10 @@
 Caver computation started.
 Merging all PDB files into one multimodel PDB file.
 Settings loaded from:
-/home/erikna/compchem/WhatCat/miner/tmp6azkt48q/config.txt
+/home/erikna/compchem/WhatCat/miner/tmpnkq6ftw1/config.txt
 
 Basic parameters:
-starting_point_atom 1017 1026 1404
+starting_point_coordinates [25.994804300307816, 31.300555483650815, 30.739844306367118]
 probe_radius 0.9
 shell_radius 3.0
 shell_depth 4.0
@@ -15,7 +15,7 @@ frame_clustering_threshold 1.0
 0 redundant tunnels removed.
 0 tunnels stored.
 
-Loading tunnels from /home/erikna/compchem/WhatCat/miner/tmp6azkt48q/data/tunnels/tunnels_1be0.pdb.obj
+Loading tunnels from /home/erikna/compchem/WhatCat/miner/tmpnkq6ftw1/data/tunnels/tunnels_1be0.pdb.obj
 Loaded 0 tunnels for 1be0.pdb.
 0 tunnels successfully loaded.
 
