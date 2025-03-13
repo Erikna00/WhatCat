@@ -74,7 +74,13 @@ end_frame = -1 #last frame
 #TODO This is really important
 #forcefield kwargs
 forcefield_kwargs = {'constraints': HBonds, 'rigidWater': True, 'removeCMMotion': True, 'hydrogenMass' : 1.5 * amu }
-cache_file = "ligands.json"
+
+try:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+except:
+    script_dir = os.getcwd()
+
+cache_file = f"{script_dir}/ligands.json"
 
 
 if pdb_fixer == "True" or pdb_fixer == "true":
@@ -356,7 +362,7 @@ start_time = time.time()
 rmsf_result = analysis.calc_rmsf_parallel(final_pdb, centered_traj_name, n_jobs=n_jobs)
 
 protein = mda_traj.select_atoms('protein')
-residue_list = range(1, len(protein.residues) +1)
+residue_list = range(1, len(rmsf_result) +1)
 plot.line_plotter_2d(residue_list, rmsf_result, "residue", "RMSF (Å)", pdb_name, "1d_rmsf")
 
 print(f"{round(time.time() - start_time,2)}s used for RMSF")
