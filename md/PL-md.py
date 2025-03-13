@@ -7,14 +7,19 @@ from openmmforcefields.generators import SystemGenerator
 from pdbfixer import PDBFixer
 import argparse
 from utils import utils, analysis, plot
-import numpy as np
-import MDAnalysis as mda 
-import pandas as pd
-from multiprocessing import cpu_count
-import dask
-import time
-import os
+import re
 
+#only needed for devwork
+import importlib
+importlib.reload(utils)
+
+import warnings
+# suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
+warnings.filterwarnings('ignore')
+
+#fake command line arguments
+#sys.argv = ["fake_name", "chiara/Z_complex.pdb", "--pdbfix","True","-l", "chiara/CD_lig.sdf", "-t", "0.1", "-dt", "4", "--dist", """resid 131 and name OG, resname UN0 and name N1x""", "--dist", """resid 131 and name OG, resname UN0 and name C8x"""]
+sys.argv = ["fake_name", "/home/erikna/compchem/md_data/1be0.pdb", "--pdbfix","True", "-t", "0.2", "-dt", "4"]
 
 #Start the command line parser
 parser = argparse.ArgumentParser(
@@ -34,10 +39,10 @@ parser.add_argument("-l", "--lig", type = str, action="append", default = None, 
                                                                        "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep.")) 
 parser.add_argument("-t", "--timeprod", type = float, default= 0.2, help="Production simulation time in ns. Accepts floats and ints")
 parser.add_argument("-dt", "--timestep", type = int, default= 4, help="Simulation timestep in fs. Accepts ints")
-parser.add_argument("--resname", type = str, action="append", default= None, help="Residue names in PDB for which you want further analysis, eg ligand.\n"
+parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                             "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
 parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
-parser.add_argument("--dist", type = str, action="append", default= None, help="""a pair of atom numbers eg "resid 131 atom OG1", "resname UNK atom N1x" for which you want 
+parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 atom OG1", "resname UNK atom N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
 
 # Parse arguments
@@ -69,8 +74,11 @@ if sparsity == 0:
 start_frame = 0
 end_frame = -1 #last frame
 
+#TODO figure out if we want HMR, constrain HBOND, 4 fs, langevinmiddle or another solution like 3 fs no HMR or a variable time langevin integrator (this would however lose the BAOB correction)
+#TODO This is really important
 #forcefield kwargs
 forcefield_kwargs = {'constraints': HBonds, 'rigidWater': True, 'removeCMMotion': True, 'hydrogenMass' : 1.5 * amu }
+cache_file = "ligands.json"
 
 
 if pdb_fixer == "True" or pdb_fixer == "true":
@@ -114,28 +122,41 @@ if ligand_files is not None:
     ligand_mol = []
     lig_resnames = []
 
-    for ligand in ligand_files:
+    for lig in ligand_files:
         #read ligand file
-        ligand_mol.append(Molecule.from_file(ligand))
+        ligand = Molecule.from_file(lig)
 
-        #read name
-        lig_resname = os.path.splitext(os.path.basename(ligand))[0].upper()  # Ensure uppercase
-        # Automatically set as resname if it's exactly 3 letters long and no explicit resname is provided
-        if len(lig_resname) == 3:
-            lig_resnames.append(lig_resname)  
+        #read name ensuring uppercase
+        lig_name = os.path.splitext(os.path.basename(lig))[0].upper()
+        
+        # Automatically set as resname if it's exactly 3 letters or numbers long and no explicit resname is provided
+        if len(re.findall(r'[A-Z0-9]', lig_name)) == 3:
+            ligand_name = lig_name
         else:
-            lig_resnames.append(f"UN{unnamed_ligands}")
+            ligand_name = (f"UN{unnamed_ligands}")
             unnamed_ligands += 1
+
+        #set name for atoms in residue to get desired behaviour from OFFtoolkit
+        for atom in ligand.atoms:
+            atom.metadata['residue_name'] = ligand_name
+        
+        #keep track of what ligands we are handling
+        lig_resnames.append(ligand_name) 
+
+        #add to list which will be added to topology
+        ligand_mol.append(ligand)
+
+    #if analysis not specified, analyze all added residues
+    if analysis_resnames is None:
+        analysis_resnames = lig_resnames
 
     # Specify the forcefield
     # Initialize a SystemGenerator using the Sage.2.1 for the ligand and tip3p for the water.
-    #TODO figure out if we want HMR, constrain HBOND, 4 fs, langevinmiddle or another solution like 3 fs no HMR or a variable time langevin integrator (this would however lose the BAOB correction)
-    #TODO This is really important
     system_generator = SystemGenerator(
         forcefields=['amber14-all.xml', 'amber14/tip3pfb.xml'],
         small_molecule_forcefield='openff-2.2.1.offxml',
         molecules=ligand_mol,
-        forcefield_kwargs=forcefield_kwargs, cache="ligands.json")
+        forcefield_kwargs=forcefield_kwargs, cache=cache_file)
     
     #start a modeller
     modeller = Modeller(pdb.topology, pdb.positions)
@@ -144,25 +165,21 @@ if ligand_files is not None:
     # Adding ligand(s) to protein PDB
     existing_resnames = {res.name for res in pdb.topology.residues()}
 
-    for ligand, resname in zip(ligand_mol, lig_resnames):
-        if resname not in existing_resnames:
+    #add ligands to topology and save names
+    for ligand in ligand_mol:
+        if ligand.name not in existing_resnames:
             lig_top = ligand.to_topology()
             modeller.add(lig_top.to_openmm(), lig_top.get_positions().to_openmm())
     
-    #if analysis not specified, analyze all added residues
-    if analysis_resnames == None:
-        analysis_resnames = lig_resname
-
-
 #if not simulating with ligand
-elif ligand_file == None:
+elif ligand_files == None:
     # Specify the forcefield
     # Initialize a SystemGenerator using the Sage.2.1 for the ligand and tip3p for the water.
     
     system_generator = SystemGenerator(
         forcefields=['amber14-all.xml', 'amber14/tip3pfb.xml'],
         small_molecule_forcefield='openff-2.2.1.offxml',
-        forcefield_kwargs=forcefield_kwargs, cache="ligands.json")
+        forcefield_kwargs=forcefield_kwargs, cache=cache_file)
     
     #start a modeller
     modeller = Modeller(pdb.topology, pdb.positions)
@@ -218,11 +235,24 @@ state = simulation.context.getState(getPositions=True)
 with open(f"{pdb_name}_final.pdb", "w") as file:
     PDBFile.writeFile(simulation.topology, state.getPositions(), file)
 
+import numpy as np
+import MDAnalysis as mda 
+import pandas as pd
+import multiprocessing as mp
+import time
+import os
+
+#only needed for devwork
+import importlib
+importlib.reload(utils)
+importlib.reload(analysis)
+importlib.reload(plot)
+
 #TODO write a analysis class using the multithreaded functions
-#TODO write a input file format reader
+#TODO divide up this code into a analysis_main module
 
 #get how much we can parallelize
-n_jobs = cpu_count()
+n_jobs = mp.cpu_count()
 align = True
 
 #settings for the 2D RMSD algorithm
@@ -237,13 +267,16 @@ print("Centering and aligning protein in PBC" if align else "Centering protein i
 start_time = time.time()
 
 #center proteins, This also resets the time of the first snapshot to 0 ps thus removing equillibration time
+#TODO This now uses MDAnalysis bond guesser for the trajectory wrapping. This is suboptimal but i havent figured out how to communicate openmm topology
+#to MDAnalysis except via ParMed which can´t handle rigid water 
 centered_traj_name = f"{pdb_name}_trajectory.dcd"
-mda_traj = utils.parallel_center_trajectory(f"{pdb_name}_final.pdb", f"{pdb_name}_trajectory.dcd", align=align, n_jobs=n_jobs, output_filename = centered_traj_name) 
+final_pdb = f"{pdb_name}_final.pdb"
+mda_traj = utils.parallel_center_trajectory(final_pdb, f"{pdb_name}_trajectory.dcd", align=align, n_jobs=n_jobs, output_filename = centered_traj_name) 
 print(f"{round(time.time() - start_time,2)}s used for centering")
 
 #dt is in ps
 time_offset = 0 #redundant due to centering
-mda_traj = mda.Universe(f"{pdb_name}_final.pdb", centered_traj_name, dt=reporting_time, time_offset=time_offset)
+mda_traj = mda.Universe(final_pdb, centered_traj_name, dt=reporting_time, time_offset=time_offset)
 
 #load state data reporter information from memory
 column_names = ["Step", "Potential Energy (kJ/mole)", "Temperature (K)", "Box Volume (nm^3)"]
@@ -255,6 +288,11 @@ md_log_df = pd.read_csv(f"{pdb_name}_md_log.txt", names=column_names, comment="#
 # Extract Trajectory Time
 times = np.array([ts.time for ts in mda_traj.trajectory])  # Extract time (in ps)
 md_log_df.insert(0, "Time (ps)", times)
+
+#plot reporter info from OPENMM
+plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Potential Energy (kJ/mole)"], "Time (ps)", "Potential Energy (kJ/mole)", pdb_name, "energy")
+plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Temperature (K)"], "Time (ps)", "Temperature (K)", pdb_name, "temperature")
+plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Box Volume (nm^3)"], "Time (ps)", "Box Volume (nm^3)", pdb_name, "volume")
 
 print("computing RMSD")
 start_time = time.time()
@@ -274,12 +312,15 @@ rmsd_backbone = rmsd_analysis.results.rmsd[:, 2]  # Extract RMSD values (column 
 rmsd_back_df = pd.DataFrame({"RMSD backbone": rmsd_backbone})
 md_log_df = pd.concat([md_log_df, rmsd_back_df], axis=1) 
 
-rmsd_backbone_matrix = analysis.parallel_2d_rmsd(f"{pdb_name}_final.pdb", sparse_traj, "backbone", n_jobs=n_jobs)
+rmsd_backbone_matrix = analysis.parallel_2d_rmsd(final_pdb, sparse_traj, "backbone", n_jobs=n_jobs)
 plot.heatmap(rmsd_backbone_matrix, "tims (ps)", "tims (ps)", "RMSD (Å)", f"2D RMSD for backbone", f"2d_rmsd_backbone", pdb_name, sparsity, start_frame)
 
-if analysis_resnames != None:
-    residue_rmsd = []
-    rmsd_residue_names = []
+#define variables here so they are availible for desigining how to plot
+residue_rmsd = []
+rmsd_residue_names = []
+
+#run residue specific analysis and plot
+if len(analysis_resnames) > 0:
     for resname in analysis_resnames:
 
         #compute 1D RMSD
@@ -289,12 +330,17 @@ if analysis_resnames != None:
         residue_rmsd.append(rmsd_analysis.results.rmsd[:, 2]) #we add a extra set of [] to "transpose" the list
 
         #compute 2D RMSD
-        rmsd_2d_residue = analysis.parallel_2d_rmsd(f"{pdb_name}_final.pdb", sparse_traj, f"resname {resname}", n_jobs=n_jobs)
+        rmsd_2d_residue = analysis.parallel_2d_rmsd(final_pdb, sparse_traj, f"resname {resname}", n_jobs=n_jobs)
         plot.heatmap(rmsd_2d_residue, "tims (ps)", "tims (ps)", "RMSD (Å)", f"2D RMSD for {resname}", f"2d_rmsd_{resname}", pdb_name, sparsity, start_frame)
 
     #save the 1d data    
     rmsd_lig_df = pd.DataFrame(np.array(residue_rmsd).T, columns=rmsd_residue_names)
     md_log_df = pd.concat([md_log_df, rmsd_lig_df], axis=1) 
+    plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[["RMSD backbone"] + rmsd_residue_names], "Time (ps)", "RMSD (Å)", pdb_name, "1d_rmsd")
+
+#if no extra analysis necessary, then we can plot right away
+else:
+    plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["RMSD backbone"], "Time (ps)", "RMSD (Å)", pdb_name, "1d_rmsd")
 
 #remove temp sparse traj
 os.remove(sparse_traj)
@@ -305,7 +351,7 @@ print(f"{round(time.time() - start_time,2)}s used for RMSD")
 print("computing RMSF")
 start_time = time.time()
 
-rmsf_result = analysis.calc_rmsf_parallel(f"{pdb_name}_final.pdb", centered_traj_name, n_jobs=n_jobs)
+rmsf_result = analysis.calc_rmsf_parallel(final_pdb, centered_traj_name, n_jobs=n_jobs)
 
 protein = mda_traj.select_atoms('protein')
 residue_list = range(1, len(protein.residues) +1)
@@ -322,7 +368,26 @@ rga = mda.analysis.base.AnalysisFromFunction(analysis.radgyr, mda_traj.trajector
 rg_labels = ["Rg_all", "Rg_x", "Rg_y", "Rg_z"]
 rg_df = pd.DataFrame(rga.results.timeseries, columns=rg_labels)
 md_log_df = pd.concat([md_log_df, rg_df], axis=1)
+
+plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[rg_labels], "Time (ps)", "Radius of gyration (Å)", pdb_name, "rg")
 print(f"{round(time.time() - start_time,2)}s used for rgyr")
+
+if len(dist_residues) > 0:
+    #compute distances
+    print("computing pairwise distances")
+    start_time = time.time()
+    distances = analysis.calculate_pairwise_distances(final_pdb, centered_traj_name, dist_residues, backend="multiprocessing", n_workers=n_jobs)
+
+    if debug == True:
+        print("Shape of pairwise distance result:", distances.shape)  # Expected: (num_frames, num_pairs)
+        print(distances)
+
+    distance_labels = [i for i in dist_residues]
+    distance_df = pd.DataFrame(distances, columns=distance_labels)
+    md_log_df = pd.concat([md_log_df, distance_df], axis=1)
+
+    print(f"{round(time.time() - start_time,2)}s used for pairwise distances")
+    plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[distance_labels], "Time (ps)", "Distance (Å)", pdb_name, "distances")
 
 #save df
 md_log_df.to_csv(f"{pdb_name}_results.csv", index=False)  # Saves without the index column
@@ -334,10 +399,3 @@ if debug == True:
 
 #check equillibration
 analysis.equillibration_check(md_log_df, reporting_time, dt=100)
-
-#plot
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Potential Energy (kJ/mole)"], "Time (ps)", "Potential Energy (kJ/mole)", pdb_name, "energy")
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Temperature (K)"], "Time (ps)", "Temperature (K)", pdb_name, "temperature")
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Box Volume (nm^3)"], "Time (ps)", "Box Volume (nm^3)", pdb_name, "volume")
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[["RMSD backbone"] + rmsd_residue_names], "Time (ps)", "RMSD (Å)", pdb_name, "_rmsd")
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[["Rg_all", "Rg_x", "Rg_y", "Rg_z"]], "Time (ps)", "Radius of gyration (Å)", pdb_name, "rg")
