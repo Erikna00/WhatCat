@@ -135,43 +135,44 @@ def parallel_center_trajectory(pdb_filename, traj_filename, align, n_jobs=4, out
     Returns:
         mda universe from the centered trajectory
     """
-    # Load Universe once to get number of frames.
-    u = mda.Universe(pdb_filename, traj_filename)
-    n_frames = u.trajectory.n_frames
-    frames_per_block = n_frames // n_jobs
-    
-    # Create tasks for each block and list to hold temp filenames.
-    tasks = []
-    temp_files = []
-
-    for i in range(n_jobs):
-        start = i * frames_per_block
-        stop = (i + 1) * frames_per_block if i < n_jobs - 1 else n_frames # Last block takes all remaining frames.
+    # Create a temporary directory inside the current working directory
+    script_dir = os.getcwd()  # Get the current directory where the script is called
+    with tempfile.TemporaryDirectory(dir=script_dir) as tmpdir:
+        # Load Universe once to get number of frames.
+        u = mda.Universe(pdb_filename, traj_filename)
+        n_frames = u.trajectory.n_frames
+        frames_per_block = n_frames // n_jobs
         
-        temp_filename = f"temp_centered_block_{i}.dcd"
-        temp_files.append(temp_filename)
-        tasks.append((pdb_filename, traj_filename, start, stop, temp_filename))
+        # Create tasks for each block and list to hold temp filenames.
+        tasks = []
+        temp_files = []
 
-    # Use multiprocessing Pool to process tasks in parallel
-    with Pool(n_jobs) as pool:
-        if align == False:
-            pool.starmap(center_process_block, tasks)
-        elif align == True:
-            pool.starmap(center_align_process_block, tasks)
-    
-    # Combine temporary files into the final output trajectory.
-    with mda.Writer(output_filename, u.atoms.n_atoms) as writer:
-        for temp_file in temp_files:
-            temp_u = mda.Universe(pdb_filename, temp_file)
-            for ts in temp_u.trajectory:
-                writer.write(temp_u.atoms)
-    
-    #Clean up the temporary files.
-    for temp_file in temp_files:
-        os.remove(temp_file)
-    
-    #print(f"Centered trajectory written to {output_filename}")
+        for i in range(n_jobs):
+            start = i * frames_per_block
+            stop = (i + 1) * frames_per_block if i < n_jobs - 1 else n_frames  # Last block takes all remaining frames.
+            
+            # Generate the temporary filename inside the tmpdir
+            temp_filename = os.path.join(tmpdir, f"temp_centered_block_{i}.dcd")
+            temp_files.append(temp_filename)
+            tasks.append((pdb_filename, traj_filename, start, stop, temp_filename))
 
+        # Use multiprocessing Pool to process tasks in parallel
+        with Pool(n_jobs) as pool:
+            if align == False:
+                pool.starmap(center_process_block, tasks)
+            elif align == True:
+                pool.starmap(center_align_process_block, tasks)
+        
+        # Combine temporary files into the final output trajectory.
+        with mda.Writer(output_filename, u.atoms.n_atoms) as writer:
+            for temp_file in temp_files:
+                temp_u = mda.Universe(pdb_filename, temp_file)
+                for ts in temp_u.trajectory:
+                    writer.write(temp_u.atoms)
+        
+        # Cleanup is handled by TemporaryDirectory (all files in tmpdir are removed automatically)
+
+    # Return the Universe of the final output trajectory
     mda_universe = mda.Universe(pdb_filename, output_filename)
     return mda_universe
 
