@@ -54,6 +54,12 @@ def center_align_process_block(pdb_filename, traj_filename, start, stop, temp_fi
     """
     # Load the Universe for this block
     u = mda.Universe(pdb_filename, traj_filename)
+
+    custom_vdw_radii = {"Na":1}    
+    guesser = mda.guesser.default_guesser.DefaultGuesser(u, vdwradii=custom_vdw_radii)
+    bonds = guesser.guess_bonds()
+    u.add_TopologyAttr('bonds', bonds)
+
     ref = u.copy()
     
     ref_protein = ref.select_atoms('protein')
@@ -159,7 +165,7 @@ def parallel_center_trajectory(pdb_filename, traj_filename, align, n_jobs=4, out
             for ts in temp_u.trajectory:
                 writer.write(temp_u.atoms)
     
-    # Optionally, clean up the temporary files.
+    #Clean up the temporary files.
     for temp_file in temp_files:
         os.remove(temp_file)
     
