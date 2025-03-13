@@ -17,10 +17,6 @@ import warnings
 # suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
 warnings.filterwarnings('ignore')
 
-#fake command line arguments
-#sys.argv = ["fake_name", "chiara/Z_complex.pdb", "--pdbfix","True","-l", "chiara/CD_lig.sdf", "-t", "0.1", "-dt", "4", "--dist", """resid 131 and name OG, resname UN0 and name N1x""", "--dist", """resid 131 and name OG, resname UN0 and name C8x"""]
-sys.argv = ["fake_name", "/home/erikna/compchem/md_data/1be0.pdb", "--pdbfix","True", "-t", "0.2", "-dt", "4"]
-
 #Start the command line parser
 parser = argparse.ArgumentParser(
                     prog='POS MD script',
