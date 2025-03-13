@@ -272,11 +272,17 @@ start_time = time.time()
 centered_traj_name = f"{pdb_name}_trajectory.dcd"
 final_pdb = f"{pdb_name}_final.pdb"
 mda_traj = utils.parallel_center_trajectory(final_pdb, f"{pdb_name}_trajectory.dcd", align=align, n_jobs=n_jobs, output_filename = centered_traj_name) 
+
+#rewrite final PDB after alignment
+mda_traj.trajectory[-1]
+mda_traj.atoms.write(final_pdb)
+
 print(f"{round(time.time() - start_time,2)}s used for centering")
 
 #dt is in ps
 time_offset = 0 #redundant due to centering
 mda_traj = mda.Universe(final_pdb, centered_traj_name, dt=reporting_time, time_offset=time_offset)
+
 
 #load state data reporter information from memory
 column_names = ["Step", "Potential Energy (kJ/mole)", "Temperature (K)", "Box Volume (nm^3)"]

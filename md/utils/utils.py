@@ -3,6 +3,7 @@ import MDAnalysis.transformations as trans
 import os
 from multiprocessing import Pool
 from openbabel import openbabel
+import tempfile
 
 
 #trajectory utils
