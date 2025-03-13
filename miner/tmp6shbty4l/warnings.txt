@@ -1,6 +1,0 @@
-Mar 11, 2025 8:15:37 AM caver.CalculationSettings readFile
-WARNING: Unrecognized parameter starting_point_coordinate in /home/erikna/compchem/WhatCat/miner/tmp6shbty4l/config.txt
-Mar 11, 2025 8:15:37 AM caver.CalculationSettings readFile
-WARNING: Unrecognized parameter starting_point_coordinate in /home/erikna/compchem/WhatCat/miner/tmp6shbty4l/config.txt
-Mar 11, 2025 8:15:37 AM caver.CalculationSettings readFile
-WARNING: Unrecognized parameter starting_point_coordinate in /home/erikna/compchem/WhatCat/miner/tmp6shbty4l/config.txt
