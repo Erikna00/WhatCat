@@ -82,7 +82,6 @@ except:
 
 cache_file = f"{script_dir}/ligands.json"
 
-
 if pdb_fixer == "True" or pdb_fixer == "true":
     #remove hydrogens
     utils.remove_hydrogens(f"{pdb_name}.pdb", f"{pdb_name}_fixed.pdb")
@@ -162,6 +161,8 @@ if ligand_files is not None:
     
     #start a modeller
     modeller = Modeller(pdb.topology, pdb.positions)
+
+    #adding hydrogens becomes redundant since we do that with PDBfixer anyway
     #residues=modeller.addHydrogens(system_generator.forcefield, pH = 7)
     
     # Adding ligand(s) to protein PDB
@@ -185,6 +186,8 @@ elif ligand_files == None:
     
     #start a modeller
     modeller = Modeller(pdb.topology, pdb.positions)
+
+    #adding hydrogens becomes redundant since we do that with PDBfixer anyway
     #residues=modeller.addHydrogens(system_generator.forcefield, pH = 7)
 
 modeller.deleteWater()
@@ -244,12 +247,6 @@ import multiprocessing as mp
 import time
 import os
 
-#only needed for devwork
-import importlib
-importlib.reload(utils)
-importlib.reload(analysis)
-importlib.reload(plot)
-
 #TODO write a analysis class using the multithreaded functions
 #TODO divide up this code into a analysis_main module
 
@@ -273,7 +270,9 @@ start_time = time.time()
 #to MDAnalysis except via ParMed which can´t handle rigid water 
 centered_traj_name = f"{pdb_name}_trajectory.dcd"
 final_pdb = f"{pdb_name}_final.pdb"
-mda_traj = utils.parallel_center_trajectory(final_pdb, f"{pdb_name}_trajectory.dcd", align=align, n_jobs=n_jobs, output_filename = centered_traj_name) 
+
+#To avoid errors of lacking bonds we use the topology as input when running wrapping operations
+mda_traj = utils.parallel_center_trajectory(simulation.topology, f"{pdb_name}_trajectory.dcd", align=align, n_jobs=n_jobs, output_filename = centered_traj_name) 
 
 #rewrite final PDB after alignment
 mda_traj.trajectory[-1]

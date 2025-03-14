@@ -38,14 +38,14 @@ def write_trajectory(mda_universe, filename, sparsity = 1, start_frame=0, end_fr
             writer.write(mda_universe.atoms)
 
 
-def center_align_process_block(pdb_filename, traj_filename, start, stop, temp_filename):
+def center_align_process_block(structure_filename, traj_filename, start, stop, temp_filename):
     """
     Process a block of trajectory frames:
       - Load the Universe.
       - Process frames [start, stop) by centering the protein.
       - Write the centered frames to a temporary file.
     Parameters:
-        pdb_filename (str): Path to the topology file (e.g. PDB).
+        structure_filename (str): Path to the topology file (e.g. PDB).
         traj_filename (str): Path to the trajectory file.
         start (int): Starting frame index (inclusive).
         stop (int): Ending frame index (exclusive).
@@ -54,15 +54,9 @@ def center_align_process_block(pdb_filename, traj_filename, start, stop, temp_fi
         str: The temporary filename written.
     """
     # Load the Universe for this block
-    u = mda.Universe(pdb_filename, traj_filename)
-
-    custom_vdw_radii = {"Na":1}    
-    guesser = mda.guesser.default_guesser.DefaultGuesser(u, vdwradii=custom_vdw_radii)
-    bonds = guesser.guess_bonds()
-    u.add_TopologyAttr('bonds', bonds)
+    u = mda.Universe(structure_filename, traj_filename)
 
     ref = u.copy()
-    
     ref_protein = ref.select_atoms('protein')
     ref_backbone = ref.select_atoms('backbone')
     ref_not_protein = ref.select_atoms('not protein')
@@ -89,14 +83,14 @@ def center_align_process_block(pdb_filename, traj_filename, start, stop, temp_fi
     
     return temp_filename
 
-def center_process_block(pdb_filename, traj_filename, start, stop, temp_filename):
+def center_process_block(structure_filename, traj_filename, start, stop, temp_filename):
     """
     Process a block of trajectory frames:
       - Load the Universe.
       - Process frames [start, stop) by centering the protein.
       - Write the centered frames to a temporary file.
     Parameters:
-        pdb_filename (str): Path to the topology file (e.g. PDB).
+        structure_filename (str): Path to the topology file (e.g. PDB).
         traj_filename (str): Path to the trajectory file.
         start (int): Starting frame index (inclusive).
         stop (int): Ending frame index (exclusive).
@@ -105,7 +99,7 @@ def center_process_block(pdb_filename, traj_filename, start, stop, temp_filename
         str: The temporary filename written.
     """
     # Load the Universe for this block
-    u = mda.Universe(pdb_filename, traj_filename)
+    u = mda.Universe(structure_filename, traj_filename)
     
     protein = u.select_atoms('protein')
     backbone = u.select_atoms('backbone')
@@ -123,12 +117,12 @@ def center_process_block(pdb_filename, traj_filename, start, stop, temp_filename
     
     return temp_filename
 
-def parallel_center_trajectory(pdb_filename, traj_filename, align, n_jobs=4, output_filename="centered_trajectory.dcd"):
+def parallel_center_trajectory(structure_filename, traj_filename, align, n_jobs=4, output_filename="centered_trajectory.dcd"):
     """
     Splits the trajectory into blocks and processes each block in parallel.
     After processing, the temporary files are concatenated into one final trajectory.
     Parameters:
-        pdb_filename (str): Path to the topology file.
+        structure_filename (str): Path to the topology file. Also accepts OPENMM topologies which also includes bonding information.
         traj_filename (str): Path to the trajectory file.
         n_jobs (int): Number of parallel blocks (jobs) to use.
         output_filename (str): Name of the final centered trajectory file.
@@ -139,7 +133,7 @@ def parallel_center_trajectory(pdb_filename, traj_filename, align, n_jobs=4, out
     script_dir = os.getcwd()  # Get the current directory where the script is called
     with tempfile.TemporaryDirectory(dir=script_dir) as tmpdir:
         # Load Universe once to get number of frames.
-        u = mda.Universe(pdb_filename, traj_filename)
+        u = mda.Universe(structure_filename, traj_filename)
         n_frames = u.trajectory.n_frames
         frames_per_block = n_frames // n_jobs
         
@@ -154,7 +148,7 @@ def parallel_center_trajectory(pdb_filename, traj_filename, align, n_jobs=4, out
             # Generate the temporary filename inside the tmpdir
             temp_filename = os.path.join(tmpdir, f"temp_centered_block_{i}.dcd")
             temp_files.append(temp_filename)
-            tasks.append((pdb_filename, traj_filename, start, stop, temp_filename))
+            tasks.append((structure_filename, traj_filename, start, stop, temp_filename))
 
         # Use multiprocessing Pool to process tasks in parallel
         with Pool(n_jobs) as pool:
@@ -166,19 +160,14 @@ def parallel_center_trajectory(pdb_filename, traj_filename, align, n_jobs=4, out
         # Combine temporary files into the final output trajectory.
         with mda.Writer(output_filename, u.atoms.n_atoms) as writer:
             for temp_file in temp_files:
-                temp_u = mda.Universe(pdb_filename, temp_file)
+                temp_u = mda.Universe(structure_filename, temp_file)
                 for ts in temp_u.trajectory:
                     writer.write(temp_u.atoms)
         
         # Cleanup is handled by TemporaryDirectory (all files in tmpdir are removed automatically)
 
     # Return the Universe of the final output trajectory
-    mda_universe = mda.Universe(pdb_filename, output_filename)
+    mda_universe = mda.Universe(structure_filename, output_filename)
     return mda_universe
-
-
-
-
-
 
     
