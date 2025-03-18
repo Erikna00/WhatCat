@@ -98,15 +98,16 @@ def read_tunnel_coords(caver_out_dir):
         
         # Extract coordinates
         coords = u.atoms.positions  # Shape: (N, 3)
+
+        #optional extraction of point radii
+        point_radii = u.atoms.tempfactors  # Returns a NumPy array
         
-        # Flatten the coordinates to store in DataFrame (optional)
-        #coords_flat = coords.flatten()  # Converts (N,3) -> (3N,)
-        
-        # Store data
+        # Store data, we have to add more than just coords for rows to be generated properlly
         data.append({
             "filename": pdb_file, 
             "num_atoms": coords.shape[0], 
-            "coordinates": coords
+            "coordinates": coords,
+            "tunnel_point_radii": point_radii.round(decimals=2)
         })
 
     # Convert to Pandas DataFrame
