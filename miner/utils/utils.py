@@ -3,6 +3,10 @@ import pandas as pd
 import MDAnalysis as mda
 import re
 import os
+import glob
+import warnings
+
+warnings.filterwarnings("ignore", module="MDAnalysis")
 
 def numpy_to_blankspace_sep_str(np_array):
     # Convert each element to a string and join them with a space
@@ -75,6 +79,42 @@ def read_caver_bottleneck_csv(csv_file):
 
     return bottleneck_df
 
+def read_tunnel_coords(caver_out_dir):
+    """
+    This function reads tunnel coordinates from data/clusters_timeless in a caver_out_dir
+    Returns a df ready to concat with bottlenecks.csv derived df
+    """
+
+    # Directory containing PDB files
+    pdb_dir = f"{caver_out_dir}/data/clusters_timeless/*.pdb"
+
+    # List to store data
+    data = []
+
+    # Loop over PDB files
+    for pdb_file in glob.glob(pdb_dir):
+        # Load the PDB file
+        u = mda.Universe(pdb_file)
+        
+        # Extract coordinates
+        coords = u.atoms.positions  # Shape: (N, 3)
+        
+        # Flatten the coordinates to store in DataFrame (optional)
+        #coords_flat = coords.flatten()  # Converts (N,3) -> (3N,)
+        
+        # Store data
+        data.append({
+            "filename": pdb_file, 
+            "num_atoms": coords.shape[0], 
+            "coordinates": coords
+        })
+
+    # Convert to Pandas DataFrame
+    df = pd.DataFrame(data)
+
+    #drop redundant columns
+    df = df.drop(columns = ["filename", "num_atoms"])
+    return df
 
 
 
