@@ -29,9 +29,11 @@ parser = argparse.ArgumentParser(
                     epilog='Use with care and acknowledge Erik Sundén and the Per-Olof Syrén group at KTH Sweden')
 
 parser.add_argument("pdb", type = str, help = "dockpreped PDB structure of the structure you want to simulate, including ligands") 
-parser.add_argument("--pdbfix", type = str, default = "True", help = ("True or False depending on if your structure shall be PDBfixed." 
-                                                                     "default = True \n good if you have a SEQRES and unresolved loops."
-                                                                     "BEWARE, this function also removes all protein hydrogens and readds them" ))
+parser.add_argument("--pdbfixer", type = int, default = 2, help = ("0, 1, 2 depending on if your structure shall be PDBfixed." 
+                                                                    "default = 2 removes and readds hydrogens as well as tries to find missing atoms"
+                                                                    "good if you have a SEQRES and unresolved loops as well as unhandled disulfide bonds."
+                                                                    "=1 fixes loops and so on but retains hydrogens in structure. Good if manual protonation was done"
+                                                                    "=0 does not fix your pdb, make sure it is good" ))
 parser.add_argument("-l", "--lig", type = str, action="append", default = None, help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
                                                                        "Convenientlly produced by drawing in chemdraw and exporting as SDF then docking with added hydrogens."
                                                                        "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep.")) 
@@ -49,7 +51,7 @@ args = parser.parse_args()
 
 # Extract into variables
 pdb_file = args.pdb
-pdb_fixer = args.pdbfix
+pdb_fixer = args.pdbfixer
 ligand_files = args.lig
 simulation_time_ns = args.timeprod
 timestep = args.timestep
@@ -85,14 +87,21 @@ except:
 
 cache_file = f"{script_dir}/ligands.json"
 
-if pdb_fixer == "True" or pdb_fixer == "true":
-    #remove hydrogens
-    utils.remove_hydrogens(f"{pdb_name}.pdb", f"{pdb_name}_fixed.pdb")
 
-    #Run PDBfixer
-    fixer = PDBFixer(filename=f"{pdb_name}_fixed.pdb")
-    #we remove and then re-add hydrogens to prevent shenanigans related to disulfide bonds
-    fixer.addMissingHydrogens(7.4)  # add missing hydrogens
+
+if pdb_fixer == 1 or pdb_fixer == 2:
+
+    if pdb_fixer == 2:
+        #we remove and then re-add hydrogens to prevent shenanigans related to disulfide bonds
+        utils.remove_hydrogens(f"{pdb_name}.pdb", f"{pdb_name}_fixed.pdb")
+
+        #Run PDBfixer
+        fixer = PDBFixer(filename=f"{pdb_name}_fixed.pdb")
+    
+    elif pdb_fixer == 1:
+        #Retain hydrogens and fix anyway
+        fixer = PDBFixer(filename=f"{pdb_name}.pdb")
+
     fixer.findMissingResidues()
 
     #to avoid changing list we iterate over we copy everything to separate objects
@@ -110,14 +119,21 @@ if pdb_fixer == "True" or pdb_fixer == "true":
     #fixer.removeHeterogens(False)
     fixer.findMissingAtoms()
     fixer.addMissingAtoms()
+
+    # add missing hydrogens after adding missing atoms
+    fixer.addMissingHydrogens(7.4)  
+
     PDBFile.writeFile(fixer.topology, fixer.positions, open(f"{pdb_name}_fixed.pdb", 'w'))
 
     
     pdb = PDBFile(f"{pdb_name}_fixed.pdb")
 
-elif pdb_fixer == "False" or pdb_fixer == "false":
+elif pdb_fixer == 0:
     #if not fixing PDB
     pdb = PDBFile(f"{pdb_name}.pdb")
+
+else:
+   raise ValueError("illegal option choosen for pdbfixer, valid options are 0, 1, 2")
 
 #if simulating with ligand
 if ligand_files is not None:
