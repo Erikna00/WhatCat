@@ -33,7 +33,8 @@ parser.add_argument("--pdbfix", type = str, default = "True", help = ("True or F
 parser.add_argument("-l", "--lig", type = str, action="append", default = None, help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
                                                                        "Convenientlly produced by drawing in chemdraw and exporting as SDF then docking with added hydrogens."
                                                                        "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep.")) 
-parser.add_argument("-t", "--timeprod", type = float, default= 0.2, help="Production simulation time in ns. Accepts floats and ints")
+parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
+parser.add_argument("-rt", "--report_time", type = float, default= 1, help="Reporting frequency in ps")
 parser.add_argument("-dt", "--timestep", type = int, default= 4, help="Simulation timestep in fs. Accepts ints")
 parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                             "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
@@ -54,12 +55,12 @@ pdb_name = os.path.splitext(pdb_file)[0]
 analysis_resnames = args.resname
 debug = args.debug
 dist_residues = args.dist
+reporting_time = args.report_time #ps
 
 #calculate simulation length
 production_steps = int(simulation_time_ns / (timestep * 10**-6))
 equillibration_time = 40 #picoseconds
 equillibration_steps = int(equillibration_time / (timestep * 10**-3))
-reporting_time = 1 #ps
 reporting_frequency = int(reporting_time / (timestep * 10**-3))
 
 #this specifies the size, start and end of the 2D RMSD matrix
