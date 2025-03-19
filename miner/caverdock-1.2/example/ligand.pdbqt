@@ -1,0 +1,16 @@
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1      -0.750  -1.196   2.362  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.000   0.000   1.798  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.000   0.000   0.000  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1      -0.746  -1.190   3.893  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1      -1.495  -2.384   4.484  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2

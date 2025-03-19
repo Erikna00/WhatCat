@@ -1,0 +1,1365 @@
+MODEL 1
+REMARK CAVERDOCK RESULT:      -3.3      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 0     -3.3      3.2     1.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.907  69.031  64.406  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       4.183  68.372  63.063  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       5.252  69.384  62.031  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       5.052  68.791  65.394  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       6.187  69.801  65.229  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 2
+REMARK CAVERDOCK RESULT:      -3.1      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 1     -3.1      3.2      2.9
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.944  69.071  64.858  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       5.364  69.328  65.337  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       6.332  67.815  65.400  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.018  68.700  66.019  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       2.792  67.192  66.128  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 3
+REMARK CAVERDOCK RESULT:      -3.4      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 2     -3.4      3.2     3.13
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       4.108  69.001  65.490  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.087  68.735  64.395  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.816  68.871  62.757  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       5.479  69.350  64.906  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       6.580  68.411  65.398  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 4
+REMARK CAVERDOCK RESULT:      -3.3      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 3     -3.3      3.2     4.15
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.820  68.770  65.526  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.294  68.054  64.292  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.822  68.863  62.776  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       5.221  69.339  65.291  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       6.307  68.265  65.359  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 5
+REMARK CAVERDOCK RESULT:      -3.3      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 4     -3.3      3.2      5.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.837  68.842  65.740  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.307  67.439  65.490  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.632  66.227  65.419  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.889  69.238  64.700  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       6.090  69.947  65.324  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 6
+REMARK CAVERDOCK RESULT:      -3.2      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 5     -3.2      3.2      6.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.593  69.043  65.605  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.564  68.300  64.768  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.650  68.770  63.035  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.871  69.319  64.808  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       6.094  68.623  65.405  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 7
+REMARK CAVERDOCK RESULT:      -3.1      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 6     -3.1      3.2      7.8
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.496  68.751  65.648  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.075  67.317  65.929  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.394  66.151  65.565  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.709  68.807  64.716  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.902  69.520  65.351  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 8
+REMARK CAVERDOCK RESULT:      -3.2      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 7     -3.2      3.1     8.20
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.400  68.707  65.851  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.448  68.270  64.749  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.946  68.911  63.144  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.683  69.312  65.277  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.884  68.376  65.417  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 9
+REMARK CAVERDOCK RESULT:      -3.1      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 8     -3.1      3.1      9.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.293  68.995  66.077  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.519  67.689  66.012  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.306  67.565  67.334  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.310  69.102  64.938  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.650  69.672  65.403  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 10
+REMARK CAVERDOCK RESULT:      -3.1      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 9     -3.1      3.0     10.7
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.929  68.771  65.943  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.514  67.310  65.988  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.928  66.210  65.831  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.002  69.018  64.880  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.334  69.460  65.486  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 11
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 10     -3.0      3.0    11.18
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.967  68.814  66.126  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.190  67.516  65.980  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.279  66.085  65.964  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.935  69.024  64.958  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.305  69.522  65.416  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 12
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 11     -3.0      3.0     12.6
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.996  69.011  66.288  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.358  67.653  66.535  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.716  67.546  65.810  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.940  68.976  65.083  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.296  69.613  65.385  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 13
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 12     -2.9      2.9     13.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.799  68.634  66.249  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.592  67.787  65.879  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.448  67.618  67.256  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.977  68.372  65.307  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.050  69.457  65.398  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 14
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 13     -3.0      2.9     14.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.704  69.055  66.364  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.812  67.953  66.911  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.697  68.016  68.704  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.764  68.497  65.410  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.006  69.385  65.334  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 15
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 14     -3.0      2.8     15.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.493  68.900  66.505  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.549  67.816  67.001  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.791  67.471  68.749  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.516  68.342  65.512  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.725  69.261  65.339  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 16
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 15     -3.0      2.7     16.8
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.389  69.018  66.684  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.337  68.004  67.105  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.708  67.285  68.711  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.180  68.534  65.466  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.500  69.284  65.292  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 17
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 16     -2.9      2.7     17.4
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.106  67.543  66.657  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.457  67.991  67.957  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.710  66.795  69.275  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.553  68.739  65.811  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.069  68.789  65.624  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 18
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 17     -2.8      2.7     18.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.396  69.002  67.033  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.822  68.632  65.621  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.549  69.032  65.319  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.303  68.065  67.553  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.742  67.286  68.793  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 19
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 18     -3.0      2.8     19.7
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.141  68.937  67.039  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.231  67.900  67.676  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.960  67.195  69.161  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.968  68.335  65.900  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.161  69.210  65.518  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 20
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 19     -3.0      2.8     20.9
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.944  68.894  67.082  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.093  67.790  67.690  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.879  67.061  69.133  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.587  68.447  65.767  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.000  69.001  65.589  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 21
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 20     -2.8      2.7     21.8
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.715  68.732  67.212  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.737  67.690  67.729  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -0.461  67.219  66.473  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.383  68.278  65.911  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       3.716  68.983  65.662  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 22
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 21     -2.7      2.8     22.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.614  68.940  67.340  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.097  68.842  67.293  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -0.488  68.338  65.669  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.240  68.628  65.979  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       3.702  69.064  65.894  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 23
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 22     -2.8      2.8     23.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.979  68.456  67.648  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.290  68.265  66.172  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.810  69.099  65.698  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.060  67.350  68.176  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.736  66.488  69.242  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 24
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 23     -2.8      2.8     24.7
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1      -0.506  69.220  66.828  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.730  68.614  67.474  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.809  69.875  68.164  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1      -1.455  68.138  66.306  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1      -1.509  66.917  67.222  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 25
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 24     -2.7      2.8     25.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       0.412  69.300  67.492  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1      -0.338  68.760  66.285  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -1.327  67.318  66.705  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.780  68.630  67.648  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.762  67.498  68.675  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 26
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 25     -2.8      2.7     26.8
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.727  68.547  68.037  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.782  68.772  66.534  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.468  68.711  65.912  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.050  67.218  68.381  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.806  66.438  69.456  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 27
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 26     -2.7      2.7     27.7
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.678  68.302  68.108  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.996  67.060  68.659  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.153  65.993  69.527  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.621  68.341  66.579  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       2.952  68.762  65.955  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 28
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 27     -2.8      2.7    28.14
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       0.756  67.518  67.719  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.221  68.768  66.990  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.009  69.936  68.106  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.703  67.151  68.864  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.181  65.984  69.703  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 29
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 28     -2.8      2.7     29.6
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.075  67.581  67.968  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.502  68.974  67.532  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.726  68.915  66.217  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.793  67.148  69.248  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.249  65.835  69.808  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 30
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 29     -2.7      2.6     30.6
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       0.498  67.439  67.880  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.490  67.140  68.992  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.021  65.677  69.928  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.849  68.738  67.149  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.755  69.648  67.978  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 31
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 30     -2.7      2.6     31.6
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       0.480  67.277  67.951  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.493  68.651  67.300  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.759  69.713  68.009  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.662  67.098  68.908  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.574  65.799  69.708  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 32
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 31     -2.8      2.5     32.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.374  67.741  68.562  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.297  67.489  67.519  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -0.250  69.016  66.743  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.691  66.473  69.360  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.430  65.753  69.837  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 33
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 32     -2.8      2.4    33.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.788  67.399  68.619  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.516  67.534  67.797  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.139  69.253  67.428  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.785  66.114  69.450  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.373  65.657  69.816  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 34
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 33     -2.7      2.4     34.6
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.769  67.472  68.893  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.532  67.402  67.393  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -0.220  67.427  66.993  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.713  66.083  69.535  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.287  65.661  69.890  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 35
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 34     -2.8      2.4    35.18
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.461  67.198  68.710  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.992  68.260  67.728  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.825  69.831  67.996  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.320  66.259  69.108  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.732  65.267  70.195  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 36
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 35     -2.8      2.3     36.5
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.715  67.185  68.920  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.776  68.035  67.661  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.760  69.792  68.041  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.376  66.452  69.038  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.403  65.355  70.102  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 37
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 36     -2.8      2.3     37.4
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.779  67.220  69.129  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.811  67.428  67.975  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.966  69.070  67.261  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.741  65.779  69.642  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.356  65.375  70.147  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 38
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 37     -2.8      2.2    38.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.660  66.825  68.984  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.996  67.705  67.937  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.803  69.306  67.803  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.631  65.987  69.747  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.219  64.679  70.277  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 39
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 38     -2.8      2.1     39.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.556  66.746  69.200  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.101  67.491  67.956  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.701  69.186  67.937  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.451  65.838  69.747  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.007  64.602  70.454  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 40
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 39     -2.8      2.2     40.4
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.332  66.657  69.283  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.992  67.455  68.035  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -0.641  67.045  67.404  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.202  65.694  69.658  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.641  64.649  70.684  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 41
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 40     -2.8      2.2     41.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.357  66.455  69.303  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.890  67.356  68.171  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1      -0.802  66.994  67.685  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.225  65.558  69.810  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.738  64.235  70.378  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 42
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 41     -2.8      2.2     42.7
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.391  66.509  69.566  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.891  67.182  68.299  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.637  68.802  68.065  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       0.383  65.483  70.092  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       1.008  64.104  70.301  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 43
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 42     -2.8      2.2    43.13
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.481  65.709  69.146  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.780  64.387  69.833  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.515  63.937  69.689  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       1.109  66.254  69.551  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       0.253  65.210  70.267  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 44
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 43     -2.8      2.2     44.5
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.271  65.643  69.299  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.838  65.949  69.702  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.277  64.877  71.032  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.752  64.317  69.894  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.252  64.098  69.697  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 45
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 44     -2.8      2.2    45.12
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.485  65.418  69.460  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.059  65.705  69.902  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.489  64.521  71.129  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.977  64.070  69.995  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.439  63.800  69.641  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 46
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 45     -2.8      2.2     46.5
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.502  65.429  69.555  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.022  65.631  69.835  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.440  64.559  71.156  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.975  64.044  70.007  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.492  63.886  69.916  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 47
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 46     -2.9      2.2     47.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.805  65.076  69.332  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.675  64.485  70.159  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.284  65.617  70.293  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.821  64.006  68.924  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.966  63.874  69.928  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 48
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 47     -2.8      2.2    48.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.107  65.305  69.590  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.685  65.332  70.128  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.461  64.168  71.480  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       2.857  64.052  70.050  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.336  64.082  69.664  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 49
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 48     -2.8      2.2     49.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.622  64.853  69.457  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.702  63.963  70.277  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.631  62.291  69.618  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.826  64.074  68.922  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.922  63.898  69.972  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 50
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 49     -2.8      2.3    50.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.688  64.757  69.754  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.706  63.793  70.401  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.742  62.177  69.614  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.799  64.012  69.010  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.998  63.705  69.906  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 51
+REMARK CAVERDOCK RESULT:      -2.8      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 50     -2.8      2.4     51.8
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.850  64.416  69.544  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.924  63.829  70.597  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.288  63.489  69.933  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.310  64.042  69.808  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.470  62.586  70.247  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 52
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 51     -2.9      2.4    52.14
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.930  64.472  69.666  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.085  63.426  70.373  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.337  63.611  69.992  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.406  64.067  69.624  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.654  62.697  70.254  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 53
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 52     -2.9      2.4     53.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.927  64.288  69.530  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.106  63.096  69.993  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       0.346  63.461  70.002  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.425  64.057  69.748  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.725  62.673  70.322  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 54
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 53     -2.9      2.5     54.2
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.635  64.213  69.819  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.989  62.875  70.138  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.685  61.545  69.148  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.953  64.034  69.061  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.148  63.863  69.999  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 55
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 54     -2.9      2.5     55.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.617  64.101  70.076  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.969  62.728  70.164  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.581  61.618  68.889  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.887  64.068  69.221  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       5.155  63.925  70.062  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 56
+REMARK CAVERDOCK RESULT:      -2.7      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 55     -2.7      2.5     56.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       1.972  63.982  70.104  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.494  62.539  70.095  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       2.512  61.505  69.033  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.167  64.183  69.169  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.503  64.135  69.910  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 57
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 56     -2.9      2.5    57.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.159  63.757  69.972  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       0.964  64.623  70.335  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.025  66.222  69.515  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.354  64.606  69.530  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.692  63.985  69.929  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 58
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 57     -2.9      2.5     58.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.246  63.822  70.379  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       1.044  64.750  70.447  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       1.298  66.242  69.476  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.376  64.426  69.541  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.749  63.882  69.932  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 59
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 58     -2.9      2.6    59.11
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.855  62.779  69.246  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.777  61.668  69.722  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.194  60.048  69.202  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.466  64.160  69.496  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.917  64.081  69.969  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 60
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 59     -3.0      2.7     60.7
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.561  62.399  69.089  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.919  63.536  70.031  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.648  64.006  69.883  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.762  61.487  68.827  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       3.548  60.070  69.360  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 61
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 60     -3.0      2.7     61.6
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.682  62.316  69.283  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.010  63.643  69.948  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.757  64.046  69.806  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.915  61.412  69.193  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       3.564  59.930  69.323  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 62
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 61     -3.0      2.7    62.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.738  62.232  69.546  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.977  61.351  69.556  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       3.578  59.633  69.207  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.059  63.658  69.999  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.506  64.053  69.705  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 63
+REMARK CAVERDOCK RESULT:      -3.0      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 62     -3.0      2.7    63.10
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       2.570  61.874  69.496  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       2.825  63.137  70.303  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.448  63.831  69.960  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.863  61.091  69.255  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       3.633  59.581  69.216  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 64
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 63     -2.9      2.7    64.17
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.322  62.496  70.766  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.596  61.002  70.827  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       5.356  60.643  70.743  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       4.417  63.236  69.994  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       3.855  64.090  68.857  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
+MODEL 65
+REMARK CAVERDOCK RESULT:      -2.9      0.000      0.000
+REMARK CAVERDOCK CONSTRAINTS:       0.0      0.0      0.0      0.0
+REMARK CAVERDOCK TUNNEL: 64     -2.9      2.7     65.1
+REMARK  2 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C5_3 
+REMARK    2  A    between atoms: C5_3  and  C8_4 
+ROOT
+ATOM      1  C5  CBT     1       3.055  61.995  70.453  1.00  0.00     0.015 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C2  CBT     1       3.095  63.497  70.223  1.00  0.00     0.114 C 
+ATOM      3 Cl1  CBT     1       4.758  64.071  69.853  1.00  0.00    -0.130 Cl
+ENDBRANCH   1   2
+BRANCH   1   4
+ATOM      4  C8  CBT     1       3.002  61.225  69.131  1.00  0.00    -0.004 C 
+ATOM      5  C11 CBT     1       4.023  60.089  69.074  1.00  0.00     0.005 C 
+ENDBRANCH   1   4
+TORSDOF 2
+ENDMDL
