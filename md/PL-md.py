@@ -16,6 +16,8 @@ importlib.reload(utils)
 import warnings
 # suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
 warnings.filterwarnings('ignore')
+#filter biopython warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
 
 #Start the command line parser
 parser = argparse.ArgumentParser(
