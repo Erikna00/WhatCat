@@ -39,6 +39,7 @@ parser.add_argument("-l", "--lig", type = str, action="append", default = None, 
                                                                        "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep.")) 
 parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
 parser.add_argument("-rt", "--report_time", type = float, default= 1, help="Reporting frequency in ps")
+parser.add_argument("-eqt", "--equillibration_time", type = float, default= 50, help="Equillibration time in ps, do not set lower than 50 ps. \nUsed for both NPT and NVT equillibration")
 parser.add_argument("-dt", "--timestep", type = int, default= 4, help="Simulation timestep in fs. Accepts ints")
 parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                             "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
@@ -60,10 +61,10 @@ analysis_resnames = args.resname
 debug = args.debug
 dist_residues = args.dist
 reporting_time = args.report_time #ps
+equillibration_time = args.equillibration_time
 
 #calculate simulation length
 production_steps = int(simulation_time_ns / (timestep * 10**-6))
-equillibration_time = 40 #picoseconds
 equillibration_steps = int(equillibration_time / (timestep * 10**-3))
 reporting_frequency = int(reporting_time / (timestep * 10**-3))
 
