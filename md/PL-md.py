@@ -46,7 +46,7 @@ parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,
 parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                             "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
 parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
-parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 atom OG1", "resname UNK atom N1x" for which you want 
+parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 atom OG1, resname UNK atom N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
 parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
 
