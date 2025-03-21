@@ -4,9 +4,48 @@ import os
 from multiprocessing import Pool
 from openbabel import openbabel
 import tempfile
+import warnings
+#Filter biopython warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
 
+###############
+#molecule utils
+################
 
-#trajectory utils
+def prepare_ligand_md(file, pH = 7.4):
+    """
+    Uses Openbabel to convert a file to sdf
+    Can optionally also reprotonate the molecule to match a certain total charge
+    pH = float for pH of None to indicate that file is correctlly protonated and charged
+    """
+
+    #split filename
+    ext = os.path.splitext(file)[-1].lstrip(".")
+    name = os.path.splitext(file)[0].lstrip(".")
+    
+    # Initialize Open Babel conversion
+    obConversion = openbabel.OBConversion()
+    obConversion.SetInAndOutFormats(ext, "sdf")
+
+    # Create a molecule object
+    mol = openbabel.OBMol()
+
+    # Read the molecule from the SDF file
+    if not obConversion.ReadFile(mol, file):
+        raise ValueError(f"Failed to read molecule from {file}")
+    
+    if pH != None:
+        mol.CorrectForPH(pH)
+        
+    mol.AddHydrogens()
+
+    print(f"\nAdjusting charges for {name}")
+    print(f"Total charge infeered as {mol.GetTotalCharge()}\n")
+
+    # Write the molecule with assigned charges to the SDF file
+    obConversion.WriteFile(mol, f"{name}.sdf")
+    return f"{name}.sdf"
+
 def remove_hydrogens(input_pdb, output_pdb):
     """
     Removes all hydrogens in a PDB
@@ -23,6 +62,10 @@ def remove_hydrogens(input_pdb, output_pdb):
     
     obConversion.WriteFile(mol, output_pdb)
 
+#################
+#trajectory utils
+#################
+
 def write_trajectory(mda_universe, filename, sparsity = 1, start_frame=0, end_frame=-1):
     """
     Writes the mda.universe trajectory to a file.
@@ -38,11 +81,11 @@ def write_trajectory(mda_universe, filename, sparsity = 1, start_frame=0, end_fr
             writer.write(mda_universe.atoms)
 
 
-def center_align_process_block(structure_filename, traj_filename, start, stop, temp_filename):
+def center_align_process_block(structure_filename, traj_filename, start, stop, temp_filename, align):
     """
     Process a block of trajectory frames:
       - Load the Universe.
-      - Process frames [start, stop) by centering the protein.
+      - Process frames [start, stop) by centering (and aligning) the protein.
       - Write the centered frames to a temporary file.
     Parameters:
         structure_filename (str): Path to the topology file (e.g. PDB).
@@ -50,6 +93,7 @@ def center_align_process_block(structure_filename, traj_filename, start, stop, t
         start (int): Starting frame index (inclusive).
         stop (int): Ending frame index (exclusive).
         temp_filename (str): Filename for the temporary output.
+        align (bool): Wether to align protein to itself over traj or not. Necessary for some RMSD and RMSF dependant analysis
     Returns:
         str: The temporary filename written.
     """
@@ -62,7 +106,7 @@ def center_align_process_block(structure_filename, traj_filename, start, stop, t
     ref_not_protein = ref.select_atoms('not protein')
 
     #transform frame 0
-    ref_transformations = [trans.unwrap(ref_protein), trans.center_in_box(ref_protein), trans.wrap(ref_not_protein, compound="residues")]
+    ref_transformations = [trans.unwrap(ref_protein), trans.wrap(ref_not_protein, compound="residues"), trans.center_in_box(ref_protein), trans.wrap(ref_not_protein, compound="residues")]
     ref.trajectory.add_transformations(*ref_transformations)
 
     ref.trajectory[0] #set ref to frame 0 and run transformation
@@ -71,42 +115,14 @@ def center_align_process_block(structure_filename, traj_filename, start, stop, t
     backbone = u.select_atoms('backbone')
     not_protein = u.select_atoms('not protein')
 
-    # Define transformations for u with the alignment step
-    transformations = [trans.unwrap(protein), trans.center_in_box(protein), trans.fit_rot_trans(backbone, ref_backbone, weights = backbone.masses), trans.wrap(not_protein, compound="residues")]
-    u.trajectory.add_transformations(*transformations)
-    
-    # Create a Writer for the temporary trajectory file.
-    with mda.Writer(temp_filename, u.atoms.n_atoms) as writer:
-        for frame in range(start, stop):
-            u.trajectory[frame]  # read frame (transformations are applied here)
-            writer.write(u.atoms)
-    
-    return temp_filename
-
-def center_process_block(structure_filename, traj_filename, start, stop, temp_filename):
-    """
-    Process a block of trajectory frames:
-      - Load the Universe.
-      - Process frames [start, stop) by centering the protein.
-      - Write the centered frames to a temporary file.
-    Parameters:
-        structure_filename (str): Path to the topology file (e.g. PDB).
-        traj_filename (str): Path to the trajectory file.
-        start (int): Starting frame index (inclusive).
-        stop (int): Ending frame index (exclusive).
-        temp_filename (str): Filename for the temporary output.
-    Returns:
-        str: The temporary filename written.
-    """
-    # Load the Universe for this block
-    u = mda.Universe(structure_filename, traj_filename)
-    
-    protein = u.select_atoms('protein')
-    backbone = u.select_atoms('backbone')
-    not_protein = u.select_atoms('not protein')
-
-    # Define transformations for u with the alignment step
+    # Add centering transformations
+    #We need to rewrap the PBC before fit_rot_trans to avoid ligand drift in binding site.
     transformations = [trans.unwrap(protein), trans.center_in_box(protein), trans.wrap(not_protein, compound="residues")]
+
+    if align == True:
+        #If aligning we add alignment transformations
+        transformations += [trans.fit_rot_trans(backbone, ref_backbone, weights = backbone.masses), trans.wrap(not_protein, compound="residues")]
+
     u.trajectory.add_transformations(*transformations)
     
     # Create a Writer for the temporary trajectory file.
@@ -148,14 +164,11 @@ def parallel_center_trajectory(structure_filename, traj_filename, align, n_jobs=
             # Generate the temporary filename inside the tmpdir
             temp_filename = os.path.join(tmpdir, f"temp_centered_block_{i}.dcd")
             temp_files.append(temp_filename)
-            tasks.append((structure_filename, traj_filename, start, stop, temp_filename))
+            tasks.append((structure_filename, traj_filename, start, stop, temp_filename, align))
 
         # Use multiprocessing Pool to process tasks in parallel
         with Pool(n_jobs) as pool:
-            if align == False:
-                pool.starmap(center_process_block, tasks)
-            elif align == True:
-                pool.starmap(center_align_process_block, tasks)
+            pool.starmap(center_align_process_block, tasks)
         
         # Combine temporary files into the final output trajectory.
         with mda.Writer(output_filename, u.atoms.n_atoms) as writer:

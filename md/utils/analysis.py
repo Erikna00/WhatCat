@@ -242,6 +242,7 @@ def parallel_2d_rmsd(pdb_filename, traj_filename, selection="protein", n_jobs=4)
     split_pairs = np.array_split(frame_pairs, n_jobs)  # Distribute pairs across jobs
 
     with mp.Pool(n_jobs) as pool:
+        #TODO revise all parallelization here and in RMSF to start more reliablly
         results_list = pool.starmap(compute_rmsd_block, [(pdb_filename, traj_filename, selection, list(pairs)) for pairs in split_pairs])
 
     # Assemble the full symmetric RMSD matrix

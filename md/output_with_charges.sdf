@@ -1,0 +1,122 @@
+C:\Users\ersund\Downloads\GPP-WT.pdb
+ OpenBabel03202518063D
+
+ 29 28  0  0  0  0  0  0  0  0999 V2000
+   13.8580   -5.1590   -1.9160 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.9680   -5.9440    0.5070 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.2430   -6.3150    1.7860 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.2650   -5.5770   -0.5780 C   0  0  0  0  0  0  0  0  0  0  0  0
+   12.8710   -2.8620   -1.4000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   11.5650   -2.0990   -1.4930 C   0  0  0  0  0  0  0  0  0  0  0  0
+   15.3040   -1.6810   -4.2210 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.8020   -2.5820   -0.4690 C   0  0  0  0  0  0  0  0  0  0  0  0
+   16.0350   -0.8860   -3.1590 C   0  0  0  0  0  0  0  0  0  0  0  0
+   15.8730   -1.0230    1.3490 C   0  0  0  0  0  0  0  0  0  0  0  0
+   16.8130   -1.6390    0.6150 C   0  0  0  0  0  0  0  0  0  0  0  0
+   18.0320   -0.9860    0.0050 C   0  0  0  0  0  0  0  0  0  0  0  0
+   17.0390   -1.2980   -2.3610 C   0  0  0  0  0  0  0  0  0  0  0  0
+   17.6380   -2.6930   -2.4650 C   0  0  0  0  0  0  0  0  0  0  0  0
+   17.5850   -0.3130   -1.3160 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.5920   -1.5710    0.6440 C   0  0  0  0  0  0  0  0  0  0  0  0
+   14.6340   -1.7900    1.7630 C   0  0  0  0  0  0  0  0  0  0  0  0
+   15.4840   -6.0610    0.5310 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.0060   -3.9770   -2.4440 C   0  0  0  0  0  0  0  0  0  0  0  0
+   15.9260    0.4510    1.7250 C   0  0  0  0  0  0  0  0  0  0  0  0
+   16.3860   -1.7850   -6.6130 P   0  0  2  0  0  0  0  0  0  0  0  0
+   17.2160   -0.7030   -7.2020 O   0  0  0  0  0  0  0  0  0  0  0  0
+   15.2900   -2.2600   -7.5110 O   0  0  0  0  0  0  0  0  0  0  0  0
+   15.6500   -1.0250   -5.4540 O   0  0  0  0  0  0  0  0  0  0  0  0
+   17.2560   -2.9190   -6.1550 O   0  0  0  0  0  0  0  0  0  0  0  0
+   18.0340   -3.5410   -7.2670 P   0  0  0  0  0  0  0  0  0  0  0  0
+   18.9150   -2.5500   -7.8840 O   0  0  0  0  0  0  0  0  0  0  0  0
+   18.6750   -4.8050   -6.9770 O   0  0  0  0  0  0  0  0  0  0  0  0
+   17.0810   -4.0410   -8.2420 O   0  0  0  0  0  0  0  0  0  0  0  0
+  1  4  1  0  0  0  0
+  1 19  1  0  0  0  0
+  2  3  1  0  0  0  0
+  2  4  2  0  0  0  0
+  2 18  1  0  0  0  0
+  5  6  1  0  0  0  0
+  5  8  2  0  0  0  0
+  5 19  1  0  0  0  0
+  7  9  1  0  0  0  0
+  7 24  1  0  0  0  0
+  8 16  1  0  0  0  0
+  9 13  2  0  0  0  0
+ 10 11  2  0  0  0  0
+ 10 17  1  0  0  0  0
+ 10 20  1  0  0  0  0
+ 11 12  1  0  0  0  0
+ 12 15  1  0  0  0  0
+ 13 14  1  0  0  0  0
+ 13 15  1  0  0  0  0
+ 16 17  1  0  0  0  0
+ 21 22  2  6  0  0  0
+ 21 23  1  0  0  0  0
+ 21 24  1  0  0  0  0
+ 21 25  1  0  0  0  0
+ 25 26  1  0  0  0  0
+ 26 27  2  0  0  0  0
+ 26 28  1  0  0  0  0
+ 26 29  1  0  0  0  0
+M  END
+>  <REMARK>
+99
+99 MOE v2015.10 (Chemical Computing Group Inc.) Tue Mar 10 10:41:26 2020
+
+>  <SEQRES>
+1 A  361  MET ALA MET THR VAL ASN GLU ILE ASP LEU PRO PRO ILE
+2 A  361  PHE CYS PRO LEU GLU SER ALA ARG HIS PRO ARG ALA HIS
+3 A  361  LEU VAL ASP GLU ARG ALA ARG GLU TRP ILE ARG THR SER
+4 A  361  PRO MET CYS THR THR ASP GLU GLU ARG THR TRP VAL ALA
+5 A  361  ALA SER CYS SER THR ASP PHE PHE ALA ARG PHE ALA PRO
+6 A  361  ASP ALA ALA THR ASP ASP ARG LEU LEU TRP THR SER LEU
+7 A  361  TRP VAL TYR TRP GLY PHE ALA PHE ASP ASP HIS ARG CYS
+8 A  361  ASP ASN GLY PRO PHE SER ASN ARG PRO ALA ALA PHE SER
+9 A  361  ALA LEU ALA GLY ARG VAL GLN ARG ALA LEU GLU ALA PRO
+10 A  361  SER ALA ARG ASP GLU SER ASP GLY PHE ILE PRO ALA LEU
+11 A  361  GLN GLU ILE ALA ALA GLN PHE ARG SER PHE GLY THR PRO
+12 A  361  LEU GLN VAL ARG ARG PHE ALA ALA ALA HIS ARG ALA TRP
+13 A  361  LEU SER GLY VAL THR TRP GLN ILE GLY ASN ALA ALA ALA
+14 A  361  GLY ARG MET PRO GLY LEU ASP GLU TYR VAL ALA MET ARG
+15 A  361  LEU LEU SER ALA GLY GLY GLU PRO PRO PHE ALA MET LEU
+16 A  361  GLU LEU ALA THR GLY LEU GLU VAL PRO ALA GLN ASP LEU
+17 A  361  GLU ARG PRO ALA VAL ARG ALA LEU THR GLU MET ALA ILE
+18 A  361  MET VAL ALA ALA LEU ASP ASN ASP ARG HIS SER LEU ARG
+19 A  361  LYS GLU LEU ALA ARG GLY GLN THR ASP GLN ASN VAL TYR
+20 A  361  SER VAL LEU MET GLN GLU THR GLY LEU PRO LEU GLN GLU
+21 A  361  ALA VAL ALA ALA ALA THR ARG LEU ARG ASP ARG VAL LEU
+22 A  361  LEU ARG PHE MET ALA VAL HIS ASP ARG VAL ARG PRO GLY
+23 A  361  ALA GLY LEU GLU LEU SER THR TYR LEU GLN GLY LEU ARG
+24 A  361  TYR GLY ILE ARG GLY ASN ALA GLU TRP GLY LEU ARG VAL
+25 A  361  PRO ARG TYR LEU SER LEU GLY ARG VAL PRO ASP PRO MET
+26 A  361  ASP GLU ALA PRO LEU GLU TRP ALA GLU SER PRO ALA ASP
+27 A  361  ASP ASP ARG SER ALA PRO ARG GLY LEU PRO THR VAL ALA
+28 A  361  TRP TRP TRP ASP ASP ALA LEU LEU GLY VAL
+
+>  <HELIX>
+1   1 ALA A   25  LEU A   27  1                                   3
+2   2 VAL A   28  THR A   38  1                                  11
+3   3 ASP A   45  TRP A   50  1                                   6
+4   4 VAL A   51  ALA A   53  1                                   3
+5   5 SER A   56  PHE A   63  1                                   8
+6   6 ASP A   70  ASP A   92  1                                  23
+7   7 PRO A  100  GLU A  115  1                                  16
+8   8 PHE A  126  PHE A  140  1                                  15
+9   9 PRO A  143  ALA A  155  1                                  13
+10  10 TRP A  156  SER A  158  1                                   3
+11  11 GLY A  159  ASN A  166  1                                   8
+12  12 ALA A  167  ALA A  169  1                                   3
+13  13 ASP A  176  SER A  185  1                                  10
+14  14 GLU A  189  PHE A  192  1                                   4
+15  15 ALA A  193  LEU A  195  1                                   3
+16  16 GLU A  196  THR A  199  1                                   4
+17  17 PRO A  211  SER A  232  1                                  22
+18  18 VAL A  246  GLN A  252  1                                   7
+19  19 LEU A  258  VAL A  279  1                                  22
+20  20 HIS A  280  ARG A  282  1                                   3
+21  21 LEU A  289  ARG A  311  1                                  23
+22  22 PRO A  348  ALA A  351  1                                   4
+23  23 ASP A  356  LEU A  359  1                                   4
+
+$$$$

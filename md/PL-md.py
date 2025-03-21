@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
                     description=(
                     "This script sets up a OPENMM  simulation of a protein (amber ff14)," 
                     "any small molecules/cofactors (Sage 2.2.1) as well as  water/ions using a 12-6 model (tip3pfb)."
-                    "If using --pdbfix True then the structure will be prepared automatically. Otherwise prep is fully manual"),
+                    "If using --pdbfixer 1 or 2 then the structure will be prepared automatically. Otherwise prep is fully manual"),
                     epilog='Use with care and acknowledge Erik Sundén and the Per-Olof Syrén group at KTH Sweden')
 
 parser.add_argument("pdb", type = str, help = "dockpreped PDB structure of the structure you want to simulate, including ligands") 
@@ -36,16 +36,21 @@ parser.add_argument("--pdbfixer", type = int, default = 2, help = ("0, 1, 2 depe
                                                                     "=0 does not fix your pdb, make sure it is good" ))
 parser.add_argument("-l", "--lig", type = str, action="append", default = None, help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
                                                                        "Convenientlly produced by drawing in chemdraw and exporting as SDF then docking with added hydrogens."
-                                                                       "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep.")) 
+                                                                       "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep."
+                                                                       "WARNING charges MUST be assigned in the sdf file, use -cc True to autoassign based on pH"
+                                                                       "or whatcat/md/molecule_inspector.ipynb which both converts files and visuallizes result")) 
 parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
 parser.add_argument("-rt", "--report_time", type = float, default= 1, help="Reporting frequency in ps")
+parser.add_argument("-cc", "--charge_correct", type = str, default= "False", help="Whether to charge correct ligands or not. also converts files to sdf if ligand not sdf")
+parser.add_argument("-ph", "--ph", type = float, default= 7.4, help="Sets pH for the simulation using PDBfixer and if using -cc openbabel")
 parser.add_argument("-eqt", "--equillibration_time", type = float, default= 50, help="Equillibration time in ps, do not set lower than 50 ps. \nUsed for both NPT and NVT equillibration")
-parser.add_argument("-dt", "--timestep", type = int, default= 4, help="Simulation timestep in fs. Accepts ints")
+parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,4,5], help="Simulation timestep in fs. Accepts ints")
 parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                             "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
 parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
 parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 atom OG1", "resname UNK atom N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
+parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
 
 # Parse arguments
 args = parser.parse_args()
@@ -62,6 +67,9 @@ debug = args.debug
 dist_residues = args.dist
 reporting_time = args.report_time #ps
 equillibration_time = args.equillibration_time
+solvation = args.solvate
+ph = args.ph
+charge_correct = args.charge_correct
 
 #calculate simulation length
 production_steps = int(simulation_time_ns / (timestep * 10**-6))
@@ -122,7 +130,7 @@ if pdb_fixer == 1 or pdb_fixer == 2:
     fixer.addMissingAtoms()
 
     # add missing hydrogens after adding missing atoms
-    fixer.addMissingHydrogens(7.4)  
+    fixer.addMissingHydrogens(ph)  
 
     PDBFile.writeFile(fixer.topology, fixer.positions, open(f"{pdb_name}_fixed.pdb", 'w'))
 
@@ -144,8 +152,16 @@ if ligand_files is not None:
     lig_resnames = []
 
     for lig in ligand_files:
+        
+        if charge_correct == "True" or charge_correct == "true":
+            lig = utils.prepare_ligand_md(lig, ph)
+
         #read ligand file
         ligand = Molecule.from_file(lig)
+
+        #TODO this is bad but is needed for highlly charged ligands see https://github.com/openforcefield/openff-toolkit/issues/1741 https://github.com/openforcefield/openff-toolkit/issues/1911
+        #TODO Maybe wait for resolution of pull requests here? Issue likelly is #1911 with SCF not converging for GGPP -3?
+        ligand.assign_partial_charges("gasteiger")
 
         #read name ensuring uppercase
         lig_name = os.path.splitext(os.path.basename(lig))[0].upper()
@@ -188,11 +204,16 @@ if ligand_files is not None:
     # Adding ligand(s) to protein PDB
     existing_resnames = {res.name for res in pdb.topology.residues()}
 
-    #add ligands to topology and save names
+    #add ligands to topology (unless already present with the same name) and save names
     for ligand in ligand_mol:
         if ligand.name not in existing_resnames:
             lig_top = ligand.to_topology()
             modeller.add(lig_top.to_openmm(), lig_top.get_positions().to_openmm())
+
+    #if no analysis requested add all ligands
+    if len(analysis_resnames) == 0:
+        for ligand in lig_resnames:
+            analysis_resnames.append(ligand_name)
     
 #if not simulating with ligand
 elif ligand_files == None:
@@ -210,8 +231,12 @@ elif ligand_files == None:
     #adding hydrogens becomes redundant since we do that with PDBfixer anyway
     #residues=modeller.addHydrogens(system_generator.forcefield, pH = 7)
 
-modeller.deleteWater()
-modeller.addSolvent(system_generator.forcefield, padding=1.0*nanometer)
+if solvation == 2:
+    #remove all water
+    modeller.deleteWater()
+if solvation > 0:
+    #add solvent box
+    modeller.addSolvent(system_generator.forcefield, padding=1.0*nanometer)
 
 # Create the system using the SystemGenerator
 system = system_generator.create_system(modeller.topology)
@@ -286,8 +311,6 @@ print("Centering and aligning protein in PBC" if align else "Centering protein i
 start_time = time.time()
 
 #center proteins, This also resets the time of the first snapshot to 0 ps thus removing equillibration time
-#TODO This now uses MDAnalysis bond guesser for the trajectory wrapping. This is suboptimal but i havent figured out how to communicate openmm topology
-#to MDAnalysis except via ParMed which can´t handle rigid water 
 centered_traj_name = f"{pdb_name}_trajectory.dcd"
 final_pdb = f"{pdb_name}_final.pdb"
 
@@ -297,6 +320,9 @@ mda_traj = utils.parallel_center_trajectory(simulation.topology, f"{pdb_name}_tr
 #rewrite final PDB after alignment
 mda_traj.trajectory[-1]
 mda_traj.atoms.write(final_pdb)
+
+if align == False:
+    print("WARNING trajectory was not aligned. Subsequent analysis might be inaccurate")
 
 print(f"{round(time.time() - start_time,2)}s used for centering")
 
