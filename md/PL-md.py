@@ -16,6 +16,9 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Appli
 
 
 #TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
+#TODO add the ability to run sequential replicates of the same simulation via argparse
+#TODO move the try except for charges such that cached residues dont get their charges recalculated
+#Maybe try except the system generator?
 
 #Start the command line parser
 parser = argparse.ArgumentParser(
@@ -46,7 +49,7 @@ parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,
 parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                             "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
 parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
-parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 atom OG1, resname UNK atom N1x" for which you want 
+parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
 parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
 
@@ -54,7 +57,7 @@ parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="
 args = parser.parse_args()
 
 #print command line
-print("Parsed arguments:", vars(args))
+print(f"Parsed arguments: {vars(args)}\n")
 
 # Extract into variables
 pdb_file = args.pdb
@@ -167,10 +170,13 @@ if ligand_files is not None:
         #Alt use Psi4 OpenFF Recharge to interface Psi4 or something?
         #Alt get openeye https://docs.openforcefield.org/projects/toolkit/en/latest/api/generated/openff.toolkit.topology.Molecule.html#openff.toolkit.topology.Molecule.assign_partial_charges
         try:
+            print("assigning charges")
             ligand.assign_partial_charges("am1bcc")
+            print("charges assigned")
         except:
-            print("am1bcc failed, falling back to gasteiger charges")
+            print("\n WARNING\nam1bcc failed, falling back to gasteiger charges\n")
             ligand.assign_partial_charges("gasteiger")
+            print("charges assigned")
 
         #read name ensuring uppercase
         lig_name = os.path.splitext(os.path.basename(lig))[0].upper()

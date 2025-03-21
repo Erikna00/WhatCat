@@ -44,6 +44,7 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     titel = string of titel
     file_suffix = ending of saved file name
     """
+    #TODO get even numbers on the axis
     if start_frame == None:
         start_frame = 0
 
