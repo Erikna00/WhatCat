@@ -168,8 +168,8 @@ if ligand_files is not None:
         #Alt get openeye https://docs.openforcefield.org/projects/toolkit/en/latest/api/generated/openff.toolkit.topology.Molecule.html#openff.toolkit.topology.Molecule.assign_partial_charges
         try:
             ligand.assign_partial_charges("am1bcc")
-            print("am1bcc failed, falling back to gasteiger charges")
         except:
+            print("am1bcc failed, falling back to gasteiger charges")
             ligand.assign_partial_charges("gasteiger")
 
         #read name ensuring uppercase
