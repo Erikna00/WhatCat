@@ -157,6 +157,8 @@ if ligand_files is not None:
     for lig in ligand_files:
         
         if charge_correct == "True" or charge_correct == "true":
+            #TODO interface openeye as the primary pKa engine using either pkatyper or openff-toolkit.enumerate_protomers
+            #https://docs.eyesopen.com/toolkits/python/quacpactk/pkatypertheory.html
             lig = utils.prepare_ligand_md(lig, ph)
 
         #read ligand file
@@ -164,7 +166,13 @@ if ligand_files is not None:
 
         #TODO this is bad but is needed for highlly charged ligands see https://github.com/openforcefield/openff-toolkit/issues/1741 https://github.com/openforcefield/openff-toolkit/issues/1911
         #TODO Maybe wait for resolution of pull requests here? Issue likelly is #1911 with SCF not converging for GGPP -3?
-        ligand.assign_partial_charges("gasteiger")
+        #Alt use Psi4 OpenFF Recharge to interface Psi4 or something?
+        #Alt get openeye https://docs.openforcefield.org/projects/toolkit/en/latest/api/generated/openff.toolkit.topology.Molecule.html#openff.toolkit.topology.Molecule.assign_partial_charges
+        try:
+            ligand.assign_partial_charges("am1bcc")
+            print("am1bcc failed, falling back to gasteiger charges")
+        except:
+            ligand.assign_partial_charges("gasteiger")
 
         #read name ensuring uppercase
         lig_name = os.path.splitext(os.path.basename(lig))[0].upper()
