@@ -34,7 +34,7 @@ def line_plotter_2d(x, y, xvar, yvar, pdb_name, file_ending):
     plt.savefig(f"{pdb_name}_{file_ending}.png")
     plt.close()
 
-def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, sparsity = 1, start_frame = 0):
+def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, reporting_time, sparsity = 1, start_frame = 0):
     """
     Plots a heatmap of a 2D matrix
     matrix = 2d symmetric matrix
@@ -51,7 +51,7 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, spars
     n = matrix.shape[0]
     num_ticks = 10
     ticks = np.linspace(0, n - 1, num_ticks, dtype=int)  # Ensure valid indices
-    tick_labels = ticks * sparsity + start_frame  # Scale labels by sparsity
+    tick_labels = (ticks * sparsity + start_frame) * reporting_time  # Scale labels by sparsity
 
     plt.imshow(matrix, cmap="viridis")
     plt.colorbar(orientation="vertical", fraction=0.1, label= heat_var)

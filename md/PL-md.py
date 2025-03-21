@@ -8,16 +8,14 @@ from pdbfixer import PDBFixer
 import argparse
 from utils import utils, analysis, plot
 import re
-
-#only needed for devwork
-import importlib
-importlib.reload(utils)
-
 import warnings
 # suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
 warnings.filterwarnings('ignore')
 #filter biopython warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
+
+
+#TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
 
 #Start the command line parser
 parser = argparse.ArgumentParser(
@@ -377,7 +375,7 @@ rmsd_back_df = pd.DataFrame({"RMSD backbone": rmsd_backbone})
 md_log_df = pd.concat([md_log_df, rmsd_back_df], axis=1) 
 
 rmsd_backbone_matrix = analysis.parallel_2d_rmsd(final_pdb, sparse_traj, "backbone", n_jobs=n_jobs)
-plot.heatmap(rmsd_backbone_matrix, "tims (ps)", "tims (ps)", "RMSD (Å)", f"2D RMSD for backbone", f"2d_rmsd_backbone", pdb_name, sparsity, start_frame)
+plot.heatmap(rmsd_backbone_matrix, "tims (ps)", "tims (ps)", "RMSD (Å)", f"2D RMSD for backbone", f"2d_rmsd_backbone", pdb_name, reporting_time, sparsity, start_frame)
 
 #define variables here so they are availible for desigining how to plot
 residue_rmsd = []
@@ -395,7 +393,7 @@ if len(analysis_resnames) > 0:
 
         #compute 2D RMSD
         rmsd_2d_residue = analysis.parallel_2d_rmsd(final_pdb, sparse_traj, f"resname {resname}", n_jobs=n_jobs)
-        plot.heatmap(rmsd_2d_residue, "tims (ps)", "tims (ps)", "RMSD (Å)", f"2D RMSD for {resname}", f"2d_rmsd_{resname}", pdb_name, sparsity, start_frame)
+        plot.heatmap(rmsd_2d_residue, "tims (ps)", "tims (ps)", "RMSD (Å)", f"2D RMSD for {resname}", f"2d_rmsd_{resname}", pdb_name, reporting_time, sparsity, start_frame)
 
     #save the 1d data    
     rmsd_lig_df = pd.DataFrame(np.array(residue_rmsd).T, columns=rmsd_residue_names)
