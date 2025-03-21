@@ -55,6 +55,9 @@ parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="
 # Parse arguments
 args = parser.parse_args()
 
+#print command line
+print("Parsed arguments:", vars(args))
+
 # Extract into variables
 pdb_file = args.pdb
 pdb_fixer = args.pdbfixer
