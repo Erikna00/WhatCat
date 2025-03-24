@@ -2,6 +2,8 @@ import MDAnalysis as mda
 import MDAnalysis.transformations as trans
 import os
 from multiprocessing import Pool
+import json
+from rdkit import Chem
 from openbabel import openbabel
 import tempfile
 import warnings
@@ -9,8 +11,52 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
 
 ###############
+#Argparse utils
+###############
+
+def str_to_bool(string):
+    "converts a string to bool"
+    if string == "True" or string == "true":
+        return True
+    elif string == "False" or string == "false":
+        return False
+    else:
+        raise ValueError("Bad input to a boolean field")
+
+
+###############
 #molecule utils
 ################
+
+class FF_cache_reader():
+    """
+    Checks a molecule containing file (sdf, mol2) against a openmm forcefield cache JSON to see if it is there.
+    Used to determine if we want to calculate charges via am1bcc with the gastreiger fallback option.
+    Introduced due to non-converging SCF in am1bcc for GGPP.
+    """
+    def __init__(self, cache_file):
+        self.cache = self.load_cache(cache_file)
+
+    def load_cache(self, cache_file):
+        with open(cache_file, 'r') as f:
+            return json.load(f)
+        
+    def get_canonical_smiles(self, molecule_file):
+        return Chem.MolToSmiles(Chem.MolFromMolFile(molecule_file), canonical=True)
+    
+    def check_smiles_in_cache(self, molecule_smiles):
+        "Check if a molecule's SMILES exists in the cache"
+        for entry in self.cache:
+            if 'smiles' in entry and entry['smiles'] == molecule_smiles:
+                return True
+        #if we fail all smiles checks we return false
+        return False
+
+    def check_molecule_in_cache(self, molecule_file):
+        smiles = self.get_canonical_smiles(molecule_file)
+        boolean = self.check_smiles_in_cache(smiles)
+        return boolean
+
 
 def prepare_ligand_md(file, pH = 7.4):
     """

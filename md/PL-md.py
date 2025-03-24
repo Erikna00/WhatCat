@@ -42,7 +42,7 @@ parser.add_argument("-l", "--lig", type = str, action="append", default = None, 
                                                                        "or whatcat/md/molecule_inspector.ipynb which both converts files and visuallizes result")) 
 parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
 parser.add_argument("-rt", "--report_time", type = float, default= 1, help="Reporting frequency in ps")
-parser.add_argument("-cc", "--charge_correct", type = str, default= "False", help="Whether to charge correct ligands or not. also converts files to sdf if ligand not sdf")
+parser.add_argument("-cc", "--charge_correct", type = str, default= "False", choices=["true", "True", "false", "False"], help="Whether to charge correct ligands or not. also converts files to sdf if ligand not sdf")
 parser.add_argument("-ph", "--ph", type = float, default= 7.4, help="Sets pH for the simulation using PDBfixer and if using -cc openbabel")
 parser.add_argument("-eqt", "--equillibration_time", type = float, default= 50, help="Equillibration time in ps, do not set lower than 50 ps. \nUsed for both NPT and NVT equillibration")
 parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,4,5], help="Simulation timestep in fs. Accepts ints")
@@ -52,6 +52,9 @@ parser.add_argument("--debug", type = bool, default= False, help="debug mode, pr
 parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
 parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
+
+#Not yet implemented
+#parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from pdbname_restart.xml if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
 
 # Parse arguments
 args = parser.parse_args()
@@ -73,7 +76,13 @@ reporting_time = args.report_time #ps
 equillibration_time = args.equillibration_time
 solvation = args.solvate
 ph = args.ph
+
 charge_correct = args.charge_correct
+charge_correct = utils.str_to_bool(charge_correct)
+
+#not implemented
+#restart = args.restart
+#restart = utils.str_to_bool(restart)
 
 #calculate simulation length
 production_steps = int(simulation_time_ns / (timestep * 10**-6))
@@ -99,8 +108,6 @@ except:
     script_dir = os.getcwd()
 
 cache_file = f"{script_dir}/ligands.json"
-
-
 
 if pdb_fixer == 1 or pdb_fixer == 2:
 
@@ -155,9 +162,12 @@ if ligand_files is not None:
     ligand_mol = []
     lig_resnames = []
 
+    #start a cache finder object
+    cache_finder = utils.FF_cache_reader(cache_file=cache_file)
+
     for lig in ligand_files:
         
-        if charge_correct == "True" or charge_correct == "true":
+        if charge_correct == True:
             #TODO interface openeye as the primary pKa engine using either pkatyper or openff-toolkit.enumerate_protomers
             #https://docs.eyesopen.com/toolkits/python/quacpactk/pkatypertheory.html
             lig = utils.prepare_ligand_md(lig, ph)
@@ -165,18 +175,19 @@ if ligand_files is not None:
         #read ligand file
         ligand = Molecule.from_file(lig)
 
-        #TODO this is bad but is needed for highlly charged ligands see https://github.com/openforcefield/openff-toolkit/issues/1741 https://github.com/openforcefield/openff-toolkit/issues/1911
-        #TODO Maybe wait for resolution of pull requests here? Issue likelly is #1911 with SCF not converging for GGPP -3?
-        #Alt use Psi4 OpenFF Recharge to interface Psi4 or something?
-        #Alt get openeye https://docs.openforcefield.org/projects/toolkit/en/latest/api/generated/openff.toolkit.topology.Molecule.html#openff.toolkit.topology.Molecule.assign_partial_charges
-        try:
-            print("assigning charges")
-            ligand.assign_partial_charges("am1bcc")
-            print("charges assigned")
-        except:
-            print("\n WARNING\nam1bcc failed, falling back to gasteiger charges\n")
-            ligand.assign_partial_charges("gasteiger")
-            print("charges assigned")
+        if cache_finder.check_molecule_in_cache(lig):
+            #TODO this is bad but is needed for highlly charged ligands see https://github.com/openforcefield/openff-toolkit/issues/1741 https://github.com/openforcefield/openff-toolkit/issues/1911
+            #TODO Maybe wait for resolution of pull requests here? Issue likelly is #1911 with SCF not converging for GGPP -3?
+            #Alt use Psi4 OpenFF Recharge to interface Psi4 or something?
+            #Alt get openeye https://docs.openforcefield.org/projects/toolkit/en/latest/api/generated/openff.toolkit.topology.Molecule.html#openff.toolkit.topology.Molecule.assign_partial_charges
+            try:
+                print("assigning charges")
+                ligand.assign_partial_charges("am1bcc")
+                print("charges assigned")
+            except:
+                print("\n WARNING\nam1bcc failed, falling back to gasteiger charges\n")
+                ligand.assign_partial_charges("gasteiger")
+                print("charges assigned")
 
         #read name ensuring uppercase
         lig_name = os.path.splitext(os.path.basename(lig))[0].upper()
