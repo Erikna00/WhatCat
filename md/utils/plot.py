@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-def line_plotter_2d(x, y, xvar, yvar, pdb_name, file_ending):
+def line_plotter_2d(x, y, x_var, y_var, pdb_name, file_ending):
     """
     Plots a 2D dataset using matplotlib.
     
@@ -27,15 +27,15 @@ def line_plotter_2d(x, y, xvar, yvar, pdb_name, file_ending):
         
     else:
         #if y is list or 1d array
-        plt.plot(x, y, label=yvar)
+        plt.plot(x, y, label=y_var)
 
     if max(x) > 1000 and x_var == "Time (ps)":
         x = x /1000
         x_var = "Time (ns)"
 
-    plt.xlabel(xvar)
-    plt.ylabel(yvar)
-    plt.title(f"{yvar} vs {xvar}")  # Optional: Add title
+    plt.xlabel(x_var)
+    plt.ylabel(y_var)
+    plt.title(f"{y_var} vs {x_var}")  # Optional: Add title
     plt.savefig(f"{pdb_name}_{file_ending}.png")
     plt.close()
 
