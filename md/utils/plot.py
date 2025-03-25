@@ -15,6 +15,7 @@ def line_plotter_2d(x, y, xvar, yvar, pdb_name, file_ending):
     file_ending: Suffix for the output filename
     
     Handles multiple y columns by adding a legend.
+    if x_var == "Time (ps)" we do a check to see if we can convert to ns
     """
     plt.figure(figsize=(6, 4))  # Optional: Define figure size
 
@@ -27,6 +28,10 @@ def line_plotter_2d(x, y, xvar, yvar, pdb_name, file_ending):
     else:
         #if y is list or 1d array
         plt.plot(x, y, label=yvar)
+
+    if max(x) > 1000 and x_var == "Time (ps)":
+        x = x /1000
+        x_var = "Time (ns)"
 
     plt.xlabel(xvar)
     plt.ylabel(yvar)
@@ -44,7 +49,7 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     titel = string of titel
     file_suffix = ending of saved file name
 
-    if x_var and y_var == "time (ps)" we do a check to see if we can convert to ns
+    if x_var and y_var == "Time (ps)" we do a check to see if we can convert to ns
     """
     #TODO get even numbers on the axis
     if start_frame == None:
@@ -56,10 +61,10 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     ticks = np.linspace(0, n - 1, num_ticks, dtype=int)  # Ensure valid indices
     tick_labels = (ticks * sparsity + start_frame) * reporting_time  # Scale labels by sparsity
 
-    if max(tick_labels) > 1000 and x_var == y_var == "time (ps)":
+    if max(tick_labels) > 1000 and x_var == y_var == "Time (ps)":
         tick_labels = tick_labels /1000
-        x_var = "time (ns)"
-        y_var = "time (ns)"
+        x_var = "Time (ns)"
+        y_var = "Time (ns)"
 
     plt.imshow(matrix, cmap="viridis")
     plt.colorbar(orientation="vertical", fraction=0.1, label= heat_var)
