@@ -43,6 +43,8 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     heat_var = name of the heat variabel
     titel = string of titel
     file_suffix = ending of saved file name
+
+    if x_var and y_var == "time (ps)" we do a check to see if we can convert to ns
     """
     #TODO get even numbers on the axis
     if start_frame == None:
@@ -53,6 +55,11 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     num_ticks = 10
     ticks = np.linspace(0, n - 1, num_ticks, dtype=int)  # Ensure valid indices
     tick_labels = (ticks * sparsity + start_frame) * reporting_time  # Scale labels by sparsity
+
+    if max(tick_labels) > 1000 and x_var == y_var == "time (ps)":
+        tick_labels = tick_labels /1000
+        x_var = "time (ns)"
+        y_var = "time (ns)"
 
     plt.imshow(matrix, cmap="viridis")
     plt.colorbar(orientation="vertical", fraction=0.1, label= heat_var)
