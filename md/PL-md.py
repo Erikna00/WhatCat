@@ -26,11 +26,10 @@ parser = argparse.ArgumentParser(
                     prog='POS MD script',
                     description=(
                     "This script sets up a OPENMM  simulation of a protein (amber ff14)," 
-                    "any small molecules/cofactors (Sage 2.2.1) as well as  water/ions using a 12-6 model (tip3pfb)."
-                    "If using --pdbfixer 1 or 2 then the structure will be prepared automatically. Otherwise prep is fully manual"),
+                    "any small molecules/cofactors (Sage 2.2.1) as well as  water/ions using a 12-6 model (amber ff14/tip3pfb)."),
                     epilog='Use with care and acknowledge Erik Sundén and the Per-Olof Syrén group at KTH Sweden')
 
-parser.add_argument("pdb", type = str, help = "dockpreped PDB structure of the structure you want to simulate, including ligands") 
+parser.add_argument("pdb", type = str, help = "PDB structure of the structure you want to simulate. \nWARNING PDB may not contain any ligands. These must be provided from sdf files") 
 parser.add_argument("--pdbfixer", type = int, default = 2, help = ("0, 1, 2 depending on if your structure shall be PDBfixed." 
                                                                     "default = 2 removes and readds hydrogens as well as tries to find missing atoms"
                                                                     "good if you have a SEQRES and unresolved loops as well as unhandled disulfide bonds."
@@ -53,13 +52,15 @@ parser.add_argument("--debug", type = bool, default= False, help="debug mode, pr
 parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
 parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
-parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from pdbname_restart.xml if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
+parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from restart xml files if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
 
 # Parse arguments
 args = parser.parse_args()
 
 #print command line
 print(f"Parsed arguments: {vars(args)}\n")
+print(parser.description)
+print(parser.epilog + "\n")
 
 # Extract into variables
 pdb_file = args.pdb
@@ -238,15 +239,11 @@ if ligand_files is not None:
 
     #adding hydrogens becomes redundant since we do that with PDBfixer anyway
     #residues=modeller.addHydrogens(system_generator.forcefield, pH = 7)
-    
-    # Adding ligand(s) to protein PDB
-    existing_resnames = {res.name for res in pdb.topology.residues()}
 
-    #add ligands to topology (unless already present with the same name) and save names
+    #add ligands to topology, Ligand already in PDB not supported
     for ligand in ligand_mol:
-        if ligand.name not in existing_resnames:
-            lig_top = ligand.to_topology()
-            modeller.add(lig_top.to_openmm(), lig_top.get_positions().to_openmm())
+        lig_top = ligand.to_topology()
+        modeller.add(lig_top.to_openmm(), lig_top.get_positions().to_openmm())
 
     #if no analysis requested add all ligands
     if len(analysis_resnames) == 0:
