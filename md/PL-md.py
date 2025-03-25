@@ -6,6 +6,7 @@ from openff.toolkit import Molecule
 from openmmforcefields.generators import SystemGenerator
 from pdbfixer import PDBFixer
 import argparse
+import numpy as np
 from utils import utils, analysis, plot
 import re
 import warnings
@@ -52,9 +53,7 @@ parser.add_argument("--debug", type = bool, default= False, help="debug mode, pr
 parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
 a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
 parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
-
-#Not yet implemented
-#parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from pdbname_restart.xml if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
+parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from pdbname_restart.xml if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
 
 # Parse arguments
 args = parser.parse_args()
@@ -74,15 +73,27 @@ debug = args.debug
 dist_residues = args.dist
 reporting_time = args.report_time #ps
 equillibration_time = args.equillibration_time
-solvation = args.solvate
+solvate = args.solvate
 ph = args.ph
 
 charge_correct = args.charge_correct
 charge_correct = utils.str_to_bool(charge_correct)
 
-#not implemented
-#restart = args.restart
-#restart = utils.str_to_bool(restart)
+restart = args.restart
+restart = utils.str_to_bool(restart)
+
+#Restart overrides settings to allow loading of pdb_final
+if restart == True:
+    if solvate != 0:
+        print("--solvate overridden to 0 due to restart")
+    if pdb_fixer != 0:
+        print("--pdbfixer overridden to 0 due to restart") 
+    solvate = 0
+    pdbfixer = 0
+    pdb_name = pdb_name.replace("_final", "")
+    
+
+checkpoint_filebase = f"{pdb_name}_restart"
 
 #calculate simulation length
 production_steps = int(simulation_time_ns / (timestep * 10**-6))
@@ -99,6 +110,7 @@ end_frame = -1 #last frame
 
 #TODO figure out if we want HMR, constrain HBOND, 4 fs, langevinmiddle or another solution like 3 fs no HMR or a variable time langevin integrator (this would however lose the BAOB correction)
 #TODO This is really important
+#TODO add accellerated MD without colvars or metadynamics with colvars 
 #forcefield kwargs
 forcefield_kwargs = {'constraints': HBonds, 'rigidWater': True, 'removeCMMotion': True, 'hydrogenMass' : 1.5 * amu }
 
@@ -113,14 +125,14 @@ if pdb_fixer == 1 or pdb_fixer == 2:
 
     if pdb_fixer == 2:
         #we remove and then re-add hydrogens to prevent shenanigans related to disulfide bonds
-        utils.remove_hydrogens(f"{pdb_name}.pdb", f"{pdb_name}_fixed.pdb")
+        utils.remove_hydrogens(pdb_file, f"{pdb_name}_fixed.pdb")
 
         #Run PDBfixer
         fixer = PDBFixer(filename=f"{pdb_name}_fixed.pdb")
     
     elif pdb_fixer == 1:
         #Retain hydrogens and fix anyway
-        fixer = PDBFixer(filename=f"{pdb_name}.pdb")
+        fixer = PDBFixer(filename=pdb_file)
 
     fixer.findMissingResidues()
 
@@ -150,7 +162,7 @@ if pdb_fixer == 1 or pdb_fixer == 2:
 
 elif pdb_fixer == 0:
     #if not fixing PDB
-    pdb = PDBFile(f"{pdb_name}.pdb")
+    pdb = PDBFile(pdb_file)
 
 else:
    raise ValueError("illegal option choosen for pdbfixer, valid options are 0, 1, 2")
@@ -194,17 +206,17 @@ if ligand_files is not None:
         
         # Automatically set as resname if it's exactly 3 letters or numbers long and no explicit resname is provided
         if len(re.findall(r'[A-Z0-9]', lig_name)) == 3:
-            ligand_name = lig_name
+            ligand.name = lig_name
         else:
-            ligand_name = (f"UN{unnamed_ligands}")
+            ligand.name = (f"UN{unnamed_ligands}")
             unnamed_ligands += 1
 
         #set name for atoms in residue to get desired behaviour from OFFtoolkit
         for atom in ligand.atoms:
-            atom.metadata['residue_name'] = ligand_name
+            atom.metadata['residue_name'] = ligand.name
         
         #keep track of what ligands we are handling
-        lig_resnames.append(ligand_name) 
+        lig_resnames.append(ligand.name) 
 
         #add to list which will be added to topology
         ligand_mol.append(ligand)
@@ -238,7 +250,7 @@ if ligand_files is not None:
 
     #if no analysis requested add all ligands
     if len(analysis_resnames) == 0:
-        for ligand in lig_resnames:
+        for ligand_name in lig_resnames:
             analysis_resnames.append(ligand_name)
     
 #if not simulating with ligand
@@ -257,10 +269,10 @@ elif ligand_files == None:
     #adding hydrogens becomes redundant since we do that with PDBfixer anyway
     #residues=modeller.addHydrogens(system_generator.forcefield, pH = 7)
 
-if solvation == 2:
+if solvate == 2:
     #remove all water
     modeller.deleteWater()
-if solvation > 0:
+if solvate > 0:
     #add solvent box
     modeller.addSolvent(system_generator.forcefield, padding=1.0*nanometer)
 
@@ -301,7 +313,7 @@ simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
 #saved to file
 simulation.reporters.append(StateDataReporter(f"{pdb_name}_md_log.txt", reporting_frequency, step=True,
         potentialEnergy=True, temperature=True, volume=True))
-simulation.reporters.append(DCDReporter(f"{pdb_name}_trajectory.dcd", reporting_frequency))
+simulation.reporters.append(DCDReporter(f"{pdb_name}_trajectory.dcd", reporting_frequency, append = restart))
 
 print("Running production NPT")
 simulation.step(production_steps)
@@ -311,7 +323,14 @@ state = simulation.context.getState(getPositions=True)
 with open(f"{pdb_name}_final.pdb", "w") as file:
     PDBFile.writeFile(simulation.topology, state.getPositions(), file)
 
-import numpy as np
+#save checkpoints of state, system and integrator
+simulation.saveState(f"{checkpoint_filebase}_state.xml")
+
+with open(f"{checkpoint_filebase}_system.xml", 'w') as file:
+    file.write(XmlSerializer.serialize(system))
+with open(f"{checkpoint_filebase}_integrator.xml", 'w') as file:
+    file.write(XmlSerializer.serialize(integrator))
+
 import MDAnalysis as mda 
 import pandas as pd
 import multiprocessing as mp
