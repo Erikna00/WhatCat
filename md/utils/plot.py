@@ -19,6 +19,10 @@ def line_plotter_2d(x, y, x_var, y_var, pdb_name, file_ending):
     """
     plt.figure(figsize=(6, 4))  # Optional: Define figure size
 
+    if max(x) > 1000 and x_var == "Time (ps)":
+        x = x /1000
+        x_var = "Time (ns)"
+
     if isinstance(y, pd.DataFrame):  
         # If multiple y-values are passed as a pd dataframe
         for col in y.columns:
@@ -28,10 +32,6 @@ def line_plotter_2d(x, y, x_var, y_var, pdb_name, file_ending):
     else:
         #if y is list or 1d array
         plt.plot(x, y, label=y_var)
-
-    if max(x) > 1000 and x_var == "Time (ps)":
-        x = x /1000
-        x_var = "Time (ns)"
 
     plt.xlabel(x_var)
     plt.ylabel(y_var)
