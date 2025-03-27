@@ -28,7 +28,7 @@ class Whatcat_md():
     def __init__(self, 
                  pdb_file, ligand_files = None, restart = False,  platform="CUDA",
                  pdb_fixer=2, charge_correct = True, solvate = 2, ph = 7.4,
-                 simulation_time_ns=None, timestep=4, reporting_time=1, equillibration_time=50,
+                 simulation_time_ns=None, timestep=4, reporting_time=10, equillibration_time=50,
                  analysis_resnames =[], analysis_distances = [], 
                  debug = False ):
         """
@@ -129,7 +129,7 @@ class Whatcat_md():
         parser.add_argument("-ph", "--ph", type = float, default= 7.4, help="Sets pH for the simulation using PDBfixer and if using -cc openbabel")
 
         parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
-        parser.add_argument("-rt", "--report_time", type = float, default= 1, help="Reporting frequency in ps")
+        parser.add_argument("-rt", "--report_time", type = float, default= 10, help="Reporting frequency in ps")
         parser.add_argument("-eqt", "--equillibration_time", type = float, default= 50, help="Equillibration time in ps, do not set lower than 50 ps. \nUsed for both NPT and NVT equillibration")
         parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,4,5], help="Simulation timestep in fs. Accepts ints")
         
