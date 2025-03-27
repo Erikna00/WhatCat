@@ -7,7 +7,8 @@ from openmmforcefields.generators import SystemGenerator
 from pdbfixer import PDBFixer
 import argparse
 import numpy as np
-from utils import utils, analysis, plot
+from utils import utils
+#from utils import analysis
 import re
 import warnings
 # suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
@@ -82,6 +83,7 @@ class Whatcat_md():
         self.debug = debug
 
         self.pdb_name = os.path.splitext(pdb_file)[0]
+        self.ran_time = 0 *picoseconds
 
         try:
             self.script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -387,8 +389,6 @@ class Whatcat_md():
         else self.pdb_name is inspected and _restart is removed if present
         """
 
-        #TODO fix how we calculate remaining simulation length 
-
         if restart_pdb_file is not None:
             self.pdb_file = restart_pdb_file
             #remove restart if present
@@ -415,9 +415,9 @@ class Whatcat_md():
         self.simulation = simulation
         self.timestep = int(simulation.integrator.getStepSize().value_in_unit(femtosecond))
         print(f"\nSimulation restarted with stepsize {self.timestep}\n")
-        self.equillbration_steps = 0 #necessary so time to completion is accuratelly calculated in run_prod_simulation
 
         self.simulation = simulation
+        self.ran_time = simulation.context.getState().getTime()
 
         return simulation
     
@@ -452,6 +452,7 @@ class Whatcat_md():
 
         self.simulation = simulation
         self.equillbration_steps = equillibration_steps
+        self.ran_time += 2*equillibration_time *picoseconds
 
         return simulation
 
@@ -470,8 +471,9 @@ class Whatcat_md():
 
         #add reporters
         #print to terminal
+        totalsteps = int(self.ran_time.value_in_unit(picoseconds)) * 1000/self.timestep + production_steps
         simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
-                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps=self.equillbration_steps *2 + production_steps, speed=True))
+                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= totalsteps, speed=True))
 
         #saved to file
         simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log.txt", reporting_frequency, step=True,
