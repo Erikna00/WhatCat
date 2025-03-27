@@ -20,6 +20,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Appli
 #TODO add the ability to run sequential replicates of the same simulation via argparse
 #TODO add analysis to Whatcat_md or make it an own class
 #TODO Fix RMSF bug
+#TODO consider redoing the class  such that all arguments are provided only to the function when they are used instead of __init__
+#then it would make sens to move argparse to if __name__ = main
 
 class Whatcat_md():
     def __init__(self, 
@@ -90,7 +92,7 @@ class Whatcat_md():
         #Restart overrides settings to allow loading of pdb_final
         #TODO is this reasonable to do here after code refactoring to class?
         if restart == True:
-            self.pdb_name = self.pdb_name.replace("_final", "")
+            self.pdb_name = self.pdb_name.replace("_restart", "")
 
     @classmethod
     def init_from_parse_args(cls):
@@ -376,36 +378,46 @@ class Whatcat_md():
 
         return simulation
     
-    def restart_simulation_from_file(self, pdb = None, pdb_file=None): 
+    def restart_simulation_from_file(self, pdb = None, restart_pdb_file=None): 
         """
         Reads xml restart files and restarts a simulation object from the same.
         Requieres that pdb_file is set to _final.pdb from a previous simulation
-        Alternativelly pdb_file can be set to a path to the _final.pdb file.
-        If pdb_file is set, self.pdb_name and self.pdb is overwritten with this new information.
+        Alternativelly pdb_file can be set to a path to the _restart.pdb file.
+        If pdb_file is set, self.pdbfile is overwritten and self.name is set to the restart_pdb_file with _restart removed
+        else self.pdb_name is inspected and _restart is removed if present
         """
 
-        pdb_file2 = self.parse_default("pdb_file", pdb_file)
-        pdb = PDBFile(pdb_file2)
+        #TODO fix how we calculate remaining simulation length 
+
+        if restart_pdb_file is not None:
+            self.pdb_file = restart_pdb_file
+            #remove restart if present
+            self.pdb_name = restart_pdb_file.replace("_restart", "")
+        
+        self.pdb_name = self.pdb_name.replace("_restart", "")
+        
+        #set file basename of all restart files
+        checkpoint_filebase = f"{self.pdb_name}_restart"
+
+        pdb = PDBFile(f"{checkpoint_filebase}.pdb")
         self.pdb = pdb
 
-        if pdb_file is not None:
-            self.pdb_name = pdb_file.replace("_final", "")
+        #Read in XML:d data
+        with open(f"{checkpoint_filebase}_system.xml", "r") as f:
+            self.system = XmlSerializer.deserialize(f.read())
 
-        checkpoint_filebase = f"{self.pdb_name}_restart"
-        simulation = Simulation(pdb.topology, f"{checkpoint_filebase}_system.xml", f"{checkpoint_filebase}_integrator.xml")
+        with open(f"{checkpoint_filebase}_integrator.xml", "r") as f:
+            self.integrator = XmlSerializer.deserialize(f.read())
+
+        simulation = Simulation(pdb.topology, self.system, self.integrator)
         simulation.loadState(f"{checkpoint_filebase}_state.xml")
 
         self.simulation = simulation
-        self.timestep = simulation.integrator.getStepSize().value_in_unit(femtosecond)
-        print(f"restarted with stepsize {self.timestep}")
+        self.timestep = int(simulation.integrator.getStepSize().value_in_unit(femtosecond))
+        print(f"\nSimulation restarted with stepsize {self.timestep}\n")
         self.equillbration_steps = 0 #necessary so time to completion is accuratelly calculated in run_prod_simulation
 
         self.simulation = simulation
-
-        #TODO remove
-        state = simulation.context.getState(getPositions=True)
-        with open("temp.pdb", "w") as file:
-            PDBFile.writeFile(simulation.topology, state.getPositions(), file)
 
         return simulation
     
@@ -473,6 +485,8 @@ class Whatcat_md():
         state = simulation.context.getState(getPositions=True)
         with open(f"{self.pdb_name}_final.pdb", "w") as file:
             PDBFile.writeFile(simulation.topology, state.getPositions(), file)
+        with open(f"{self.pdb_name}_restart.pdb", "w") as file:
+            PDBFile.writeFile(simulation.topology, state.getPositions(), file)
         
         #save checkpoints of state, system and integrator
         checkpoint_filebase = f"{self.pdb_name}_restart"
@@ -506,180 +520,3 @@ analysis_resnames = whatcat_md.analysis_resnames
 analysis_distances = whatcat_md.analysis_distances
 debug = whatcat_md.debug
 
-
-#this specifies the size, start and end of the 2D RMSD matrix
-#BEWARE N^2 scaling operation
-sparsity = int((simulation_time_ns * 1000 / reporting_time) / 500) #500 is the biggest amount of frames judged to be plausible to compute
-if sparsity == 0:
-    sparsity = 1
-start_frame = 0
-end_frame = -1 #last frame
-
-
-
-import MDAnalysis as mda 
-import pandas as pd
-import multiprocessing as mp
-import time
-import os
-
-#TODO write a analysis class using the multithreaded functions
-#TODO divide up this code into a analysis_main module
-
-#get how much we can parallelize
-n_jobs = mp.cpu_count()
-align = True
-
-#settings for the 2D RMSD algorithm
-#Now set automatically above if not explicitlly requested
-if False:
-    sparsity = 40 #every nth frame will be analyzed in the 2D RMSD computation
-    start_frame = None
-    end_frame = None
-
-print("Centering and aligning protein in PBC" if align else "Centering protein in PBC")
-
-start_time = time.time()
-
-#center proteins, This also resets the time of the first snapshot to 0 ps thus removing equillibration time
-centered_traj_name = f"{pdb_name}_trajectory.dcd"
-final_pdb = f"{pdb_name}_final.pdb"
-
-#To avoid errors of lacking bonds we use the topology as input when running wrapping operations
-mda_traj = utils.parallel_center_trajectory(simulation.topology, f"{pdb_name}_trajectory.dcd", align=align, n_jobs=n_jobs, output_filename = centered_traj_name) 
-
-#rewrite final PDB after alignment
-mda_traj.trajectory[-1]
-mda_traj.atoms.write(final_pdb)
-
-if align == False:
-    print("WARNING trajectory was not aligned. Subsequent analysis might be inaccurate")
-
-print(f"{round(time.time() - start_time,2)}s used for centering")
-
-#dt is in ps
-time_offset = 0 #redundant due to centering
-mda_traj = mda.Universe(final_pdb, centered_traj_name, dt=reporting_time, time_offset=time_offset)
-
-
-#load state data reporter information from memory
-column_names = ["Step", "Potential Energy (kJ/mole)", "Temperature (K)", "Box Volume (nm^3)"]
-#header=None prevents using the first row as headers avoiding "#"steps" as a name
-#nrows = None allows us to read the whole csv not just the first 100 rows
-md_log_df = pd.read_csv(f"{pdb_name}_md_log.txt", names=column_names, comment="#", header=None, nrows=None)  
-#TODO put df in a whatcat.analysis class
-
-# Extract Trajectory Time
-times = np.array([ts.time for ts in mda_traj.trajectory])  # Extract time (in ps)
-md_log_df.insert(0, "Time (ps)", times)
-
-#plot reporter info from OPENMM
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Potential Energy (kJ/mole)"], "Time (ps)", "Potential Energy (kJ/mole)", pdb_name, "energy")
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Temperature (K)"], "Time (ps)", "Temperature (K)", pdb_name, "temperature")
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["Box Volume (nm^3)"], "Time (ps)", "Box Volume (nm^3)", pdb_name, "volume")
-
-print("computing RMSD")
-start_time = time.time()
-# overwrite selection and stuff from centering
-ref = mda_traj.copy()   # Create a copy of the universe in the first frame
-ref.trajectory[0] #set frame to 0 explicitlly
-backbone = mda_traj.select_atoms("backbone")
-
-#create a temporary sparse trajectory for 2D RMSD analysis to save resorces in the N^2 scaling operation
-sparse_traj = f"{pdb_name}_trajectory_sparse.dcd"
-utils.write_trajectory(mda_traj, f"{pdb_name}_trajectory_sparse.dcd", sparsity=sparsity, start_frame=start_frame, end_frame=end_frame)
-
-rmsd_analysis = mda.analysis.rms.RMSD(backbone, ref, select="backbone", ref_frame=0, superposition = False).run(backend="multiprocessing", n_workers= n_jobs)
-rmsd_backbone = rmsd_analysis.results.rmsd[:, 2]  # Extract RMSD values (column index 2)
-
-#save the 1D RMSD data
-rmsd_back_df = pd.DataFrame({"RMSD backbone": rmsd_backbone})
-md_log_df = pd.concat([md_log_df, rmsd_back_df], axis=1) 
-
-rmsd_backbone_matrix = analysis.parallel_2d_rmsd(final_pdb, sparse_traj, "backbone", n_jobs=n_jobs)
-plot.heatmap(rmsd_backbone_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for backbone", f"2d_rmsd_backbone", pdb_name, reporting_time, sparsity, start_frame)
-
-#define variables here so they are availible for desigining how to plot
-residue_rmsd = []
-rmsd_residue_names = []
-
-#run residue specific analysis and plot
-if len(analysis_resnames) > 0:
-    for resname in analysis_resnames:
-
-        #compute 1D RMSD
-        residue = mda_traj.select_atoms(f"resname {resname}")
-        rmsd_residue_names.append(f"RMSD {resname}")
-        rmsd_analysis = mda.analysis.rms.RMSD(residue, ref, select=f"resname {resname}", ref_frame=0, superposition = False).run(backend="multiprocessing", n_workers= n_jobs)
-        residue_rmsd.append(rmsd_analysis.results.rmsd[:, 2]) #we add a extra set of [] to "transpose" the list
-
-        #compute 2D RMSD
-        rmsd_2d_residue = analysis.parallel_2d_rmsd(final_pdb, sparse_traj, f"resname {resname}", n_jobs=n_jobs)
-        plot.heatmap(rmsd_2d_residue, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {resname}", f"2d_rmsd_{resname}", pdb_name, reporting_time, sparsity, start_frame)
-
-    #save the 1d data    
-    rmsd_lig_df = pd.DataFrame(np.array(residue_rmsd).T, columns=rmsd_residue_names)
-    md_log_df = pd.concat([md_log_df, rmsd_lig_df], axis=1) 
-    plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[["RMSD backbone"] + rmsd_residue_names], "Time (ps)", "RMSD (Å)", pdb_name, "1d_rmsd")
-
-#if no extra analysis necessary, then we can plot right away
-else:
-    plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df["RMSD backbone"], "Time (ps)", "RMSD (Å)", pdb_name, "1d_rmsd")
-
-#remove temp sparse traj
-os.remove(sparse_traj)
-
-print(f"{round(time.time() - start_time,2)}s used for RMSD")
-
-#compute RMSF
-print("computing RMSF")
-start_time = time.time()
-
-rmsf_result = analysis.calc_rmsf_parallel(final_pdb, centered_traj_name, n_jobs=n_jobs)
-
-protein = mda_traj.select_atoms('protein')
-residue_list = range(1, len(rmsf_result) +1)
-plot.line_plotter_2d(residue_list, rmsf_result, "residue", "RMSF (Å)", pdb_name, "1d_rmsf")
-
-print(f"{round(time.time() - start_time,2)}s used for RMSF")
-
-# Compute Radius of Gyration
-print("computing rgyr")
-start_time = time.time()
-protein = mda_traj.select_atoms('protein')
-rga = mda.analysis.base.AnalysisFromFunction(analysis.radgyr, mda_traj.trajectory, protein, protein.masses, total_mass=np.sum(protein.masses)).run(backend="multiprocessing", n_workers= n_jobs)
-
-rg_labels = ["Rg_all", "Rg_x", "Rg_y", "Rg_z"]
-rg_df = pd.DataFrame(rga.results.timeseries, columns=rg_labels)
-md_log_df = pd.concat([md_log_df, rg_df], axis=1)
-
-plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[rg_labels], "Time (ps)", "Radius of gyration (Å)", pdb_name, "rg")
-print(f"{round(time.time() - start_time,2)}s used for rgyr")
-
-if len(analysis_distances) > 0:
-    #compute distances
-    print("computing pairwise distances")
-    start_time = time.time()
-    distances = analysis.calculate_pairwise_distances(final_pdb, centered_traj_name, analysis_distances, backend="multiprocessing", n_workers=n_jobs)
-
-    if debug == True:
-        print("Shape of pairwise distance result:", distances.shape)  # Expected: (num_frames, num_pairs)
-        print(distances)
-
-    distance_labels = [i for i in analysis_distances]
-    distance_df = pd.DataFrame(distances, columns=distance_labels)
-    md_log_df = pd.concat([md_log_df, distance_df], axis=1)
-
-    print(f"{round(time.time() - start_time,2)}s used for pairwise distances")
-    plot.line_plotter_2d(md_log_df["Time (ps)"], md_log_df[distance_labels], "Time (ps)", "Distance (Å)", pdb_name, "distances")
-
-#save df
-md_log_df.to_csv(f"{pdb_name}_results.csv", index=False)  # Saves without the index column
-
-if debug == True:
-    print(md_log_df)
-    print(md_log_df.shape)
-    print("\n")
-
-#check equillibration
-analysis.equillibration_check(md_log_df, reporting_time, dt=100)
