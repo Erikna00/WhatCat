@@ -203,14 +203,35 @@ def parallel_center_trajectory(structure_filename, traj_filename, align, n_jobs=
         tasks = []
         temp_files = []
 
-        for i in range(n_jobs):
-            start = i * frames_per_block
-            stop = (i + 1) * frames_per_block if i < n_jobs - 1 else n_frames  # Last block takes all remaining frames.
+        # Adjust n_jobs to avoid creating more jobs than frames
+        n_jobs = min(n_jobs, n_frames)
+        
+        # Create tasks for each block and list to hold temp filenames.
+        tasks = []
+        temp_files = []
+
+        # Standard block processing
+        if n_frames >= n_jobs:  
+            frames_per_block = n_frames // n_jobs
             
-            # Generate the temporary filename inside the tmpdir
-            temp_filename = os.path.join(tmpdir, f"temp_centered_block_{i}.dcd")
-            temp_files.append(temp_filename)
-            tasks.append((structure_filename, traj_filename, start, stop, temp_filename, align))
+            for i in range(n_jobs):
+                start = i * frames_per_block
+                stop = (i + 1) * frames_per_block if i < n_jobs - 1 else n_frames  # Last block takes all remaining frames.
+                
+                # Generate the temporary filename inside the tmpdir
+                temp_filename = os.path.join(tmpdir, f"temp_centered_block_{i}.dcd")
+                temp_files.append(temp_filename)
+                tasks.append((structure_filename, traj_filename, start, stop, temp_filename, align))
+        
+        # If frames < n_jobs, assign one frame per job
+        else:  
+            for i in range(n_frames):
+                start = i
+                stop = i + 1
+                
+                temp_filename = os.path.join(tmpdir, f"temp_centered_block_{i}.dcd")
+                temp_files.append(temp_filename)
+                tasks.append((structure_filename, traj_filename, start, stop, temp_filename, align))
 
         # Use multiprocessing Pool to process tasks in parallel
         with Pool(n_jobs) as pool:
