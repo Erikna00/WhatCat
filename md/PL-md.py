@@ -1,14 +1,23 @@
 from openmm.app import *
 from openmm import *
 from openmm.unit import *
-import sys
+
 from openff.toolkit import Molecule
 from openmmforcefields.generators import SystemGenerator
 from pdbfixer import PDBFixer
+
 import argparse
 import numpy as np
-from utils import utils
-#from utils import analysis
+import pandas as pd
+import MDAnalysis as mda
+import scipy
+
+from utils import utils, analysis, plot
+
+import sys
+import os
+import multiprocessing as mp
+import time
 import re
 import warnings
 # suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
@@ -19,12 +28,17 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Appli
 
 #TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
 #TODO add the ability to run sequential replicates of the same simulation via argparse
+#TODO add something to restart such that reporting_time is preserved
+#TODO Maybe fix so we restart from _final
+
 #TODO add analysis to Whatcat_md or make it an own class
+#TODO change all function docstrings to match parallel_2d_rmsd
+
 #TODO Fix RMSF bug
-#TODO consider redoing the class  such that all arguments are provided only to the function when they are used instead of __init__
+#TODO consider redoing the md_runner class  such that all arguments are provided only to the function when they are used instead of __init__
 #then it would make sens to move argparse to if __name__ = main
 
-class Whatcat_md():
+class Whatcat_md_runner():
     def __init__(self, 
                  pdb_file, ligand_files = None, restart = False,  platform="CUDA",
                  pdb_fixer=2, charge_correct = True, solvate = 2, ph = 7.4,
@@ -154,11 +168,11 @@ class Whatcat_md():
                  analysis_resnames =args.resname, analysis_distances = args.dist, 
                  debug = args.debug)
 
-    def parse_default(self, attr_name, value):
+    def parse_set_default(self, attr_name, value):
         """
         Parses method variables compared to class variables to allow
         methods to use both class and set variables
-        valid call is self.parse_default("charge_correct", charge_correct)
+        valid call is self.parse_set_default("charge_correct", charge_correct)
         """
         current_value = getattr(self, attr_name)
         if value is None:
@@ -180,7 +194,7 @@ class Whatcat_md():
 
         Saves a openmm PDBfile object as a class variable
         """
-        pdb_fixer = self.parse_default("pdb_fixer", pdb_fixer) 
+        pdb_fixer = self.parse_set_default("pdb_fixer", pdb_fixer) 
 
         if pdb_fixer == 1 or pdb_fixer == 2:
 
@@ -241,10 +255,10 @@ class Whatcat_md():
         returns system, modeller
         """
         #parse the inputs
-        pdb = self.parse_default("pdb", pdb)
-        charge_correct = self.parse_default("charge_correct", charge_correct)
-        ph = self.parse_default("ph", ph)
-        solvate = self.parse_default("solvate", solvate)
+        pdb = self.parse_set_default("pdb", pdb)
+        charge_correct = self.parse_set_default("charge_correct", charge_correct)
+        ph = self.parse_set_default("ph", ph)
+        solvate = self.parse_set_default("solvate", solvate)
         
         #TODO add accellerated MD without colvars or metadynamics with colvars 
         #forcefield kwargs
@@ -362,9 +376,9 @@ class Whatcat_md():
         Creates and returns a openmm simulation object ready for use with NVT
         """
         #Parse inputs
-        system = self.parse_default("system", system)
-        modeller = self.parse_default("modeller", modeller)
-        timestep = self.parse_default("timestep", timestep)
+        system = self.parse_set_default("system", system)
+        modeller = self.parse_set_default("modeller", modeller)
+        timestep = self.parse_set_default("timestep", timestep)
 
         #set precision and platform
         if self.platform == "OPENCL" or self.platform == "CUDA":
@@ -414,7 +428,7 @@ class Whatcat_md():
 
         self.simulation = simulation
         self.timestep = int(simulation.integrator.getStepSize().value_in_unit(femtosecond))
-        print(f"\nSimulation restarted with stepsize {self.timestep}\n")
+        print(f"\nSimulation restarted with stepsize of {self.timestep} fs\n")
 
         self.simulation = simulation
         self.ran_time = simulation.context.getState().getTime()
@@ -428,8 +442,8 @@ class Whatcat_md():
         """
 
         #TODO maybe separate NVT and NPT equillibration time?
-        simulation = self.parse_default("simulation", simulation)
-        equillibration_time = self.parse_default("equillibration_time", equillibration_time)
+        simulation = self.parse_set_default("simulation", simulation)
+        equillibration_time = self.parse_set_default("equillibration_time", equillibration_time)
 
         equillibration_steps = int(equillibration_time / (self.timestep * 10**-3))
 
@@ -461,9 +475,9 @@ class Whatcat_md():
         Runs the production NPT simulation for the set amount of time.
         Re
         """
-        simulation = self.parse_default("simulation", simulation)
-        simulation_time_ns = self.parse_default("simulation_time_ns", simulation_time_ns)
-        reporting_time = self.parse_default("reporting_time", reporting_time)
+        simulation = self.parse_set_default("simulation", simulation)
+        simulation_time_ns = self.parse_set_default("simulation_time_ns", simulation_time_ns)
+        reporting_time = self.parse_set_default("reporting_time", reporting_time)
 
         #calculate simulation length
         production_steps = int(simulation_time_ns / (self.timestep * 10**-6))
@@ -477,7 +491,7 @@ class Whatcat_md():
 
         #saved to file
         simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log.txt", reporting_frequency, step=True,
-                potentialEnergy=True, temperature=True, volume=True))
+                potentialEnergy=True, temperature=True, volume=True, append = self.restart))
         simulation.reporters.append(DCDReporter(f"{self.pdb_name}_trajectory.dcd", reporting_frequency, append = self.restart))
 
         print("Running production NPT")
@@ -501,24 +515,556 @@ class Whatcat_md():
         
         self.simulation = simulation
         return simulation
+    
+    def create_analysis(self):
+        """
+        Creates a Whatcat_md_analysis object based on the simulation and returns it
+        """
 
-#TODO create a wrapper function of this that presents the user with a equillibrated simulation
-#right away
-whatcat_md = Whatcat_md.init_from_parse_args()
-if whatcat_md.restart is not True:
-    whatcat_md.fix_pdb()
-    whatcat_md.create_openmm_system()
-    whatcat_md.create_openmm_simulation()
-    whatcat_md.equillibrate_simulation()
-elif whatcat_md.restart is True:
-    whatcat_md.restart_simulation_from_file()
+        md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory.dcd", self.reporting_time, self.simulation_time_ns)
 
-simulation = whatcat_md.run_prod_simulation()
+        return md_analysis
 
-simulation_time_ns = whatcat_md.simulation_time_ns
-reporting_time = whatcat_md.reporting_time
-pdb_name = whatcat_md.pdb_name
-analysis_resnames = whatcat_md.analysis_resnames
-analysis_distances = whatcat_md.analysis_distances
-debug = whatcat_md.debug
+
+class Whatcat_md_analysis:
+    
+    def __init__(self, basename, topology, traj_file, reporting_time, simulation_time_ns, align = True, plot = True, start_time=0):
+        """
+        This class analyzes MD simulations by wrapping MDAnalysis in a parallelized executor using
+        divide and conquer methodologies when the MDAnalysis function does not have native parallelization
+
+        topology = A PDB file or OPENMM topology. Needs to contain bonding information for center_align_traj to work
+                This is fulfilled by passing simulation.topology from openmm
+        traj_file = A trajectory file such as .dcd
+        self.basename = basename for file output
+        align = Bool if you want trajectory aligned to first frame
+        plot = Bool if you want plots or only save to df
+        """
+        self.traj_file = traj_file
+        self.topology = topology
+        self.basename = basename
+        self.align = align
+        self.plot = plot
+
+        self.reporting_time = reporting_time
+        self.simulation_time_ns = simulation_time_ns
+        
+        self.sparsity = 1
+        self.start_frame = 0
+        self.end_frame = -1
+        self.sparse_traj = None
+
+        self.time_df = pd.DataFrame()
+        self.residue_df = pd.DataFrame()
+
+        #get how much we can parallelize
+        self.n_jobs = mp.cpu_count()
+
+    def read_md_log(self, md_log = None):
+        """
+        Reads the log file from whatcat_md_runner into self.time_df
+
+        Parameters
+        ----------
+        md_log : str
+            Path to a log file. default corresponds to basename_md_log.txt which works for files from whatcat_md_runner
+            if None, f"{self.basename}_md_log.txt"
+
+        Returns
+        -------
+        np.ndarray
+            2D NumPy array of shape (num_frames, num_pairs) where each row contains the
+            computed distances for the specified pairs in that frame.
+        also adds columns to self.time_df
+        """
+        if md_log is None:
+            md_log = f"{self.basename}_md_log.txt"
+
+        #dt is in ps
+        time_offset = 0 #redundant due to centering
+        u = mda.Universe(self.topology, self.traj_file, dt=self.reporting_time, time_offset=time_offset)
+
+        #load state data reporter information from memory
+        column_names = ["Step", "Potential Energy (kJ/mole)", "Temperature (K)", "Box Volume (nm^3)"]
+        
+        #header=None prevents using the first row as headers avoiding "#"steps" as a name
+        #nrows = None allows us to read the whole csv not just the first 100 rows
+        self.time_df = pd.read_csv(f"{self.basename}_md_log.txt", names=column_names, comment="#", header=None, nrows=None)  
+        #TODO put df in a whatcat.analysis class
+
+        # Extract Trajectory Time
+        times = np.array([ts.time for ts in u.trajectory])  # Extract time (in ps)
+        self.time_df.insert(0, "Time (ps)", times)
+
+        #plot reporter info from OPENMM
+        plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Potential Energy (kJ/mole)"], "Time (ps)", "Potential Energy (kJ/mole)", self.basename, "energy")
+        plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Temperature (K)"], "Time (ps)", "Temperature (K)", self.basename, "temperature")
+        plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Box Volume (nm^3)"], "Time (ps)", "Box Volume (nm^3)", self.basename, "volume")
+
+    def center_align_traj(self, pdb_ending = "_final.pdb", topology_ending = "_trajectory.dcd"):
+        """
+        Centers the protein in the periodic box.
+        Optionally aligns the protein to the first frame to remove tumbling
+        Aligning is necessary for some of the other analyses in this class to work
+
+        pdb_ending = the fileending which should be added to self.basename to write the centered topology to
+        topology_ending = the fileending which should be added to self.basename to write the centered trajectory to
+        defaults are set to overwrite the files from Whatcat_md_runner
+
+        returns nothing and does not add to df
+        """
+        
+        print("Centering and aligning protein in PBC" if self.align else "Centering protein in PBC")
+
+        start_time = time.time()
+
+        #center proteins, This also resets the time of the first snapshot to 0 ps thus removing equillibration time
+        centered_traj_name = f"{self.basename}{topology_ending}"
+        final_pdb = f"{self.basename}{pdb_ending}"
+
+        print(f"{self.basename}_trajectory.dcd")
+
+        mda_traj = utils.parallel_center_trajectory(self.topology, f"{self.basename}_trajectory.dcd", align=self.align, n_jobs=self.n_jobs, output_filename = centered_traj_name) 
+
+        #rewrite final PDB after alignment
+        mda_traj.trajectory[-1]
+        mda_traj.atoms.write(final_pdb)
+
+        if self.align == False:
+            print("WARNING trajectory was not aligned. Subsequent analysis might be inaccurate")
+
+        print(f"{round(time.time() - start_time,2)}s used for centering")
+
+    def calc_pairwise_distances(self, analysis_distances):
+        """
+        Calculate pairwise distances between specified atom pairs for a trajectory.
+        Each element of `atom_pairs` should be a string with two selection
+        queries separated by a comma.
+        
+        Parameters
+        ----------
+        pdb_file : str
+            Path to the topology (PDB) file.
+        traj_file : str
+            Path to the trajectory file.
+        atom_pairs : np.ndarray or list of str
+            Array/list of strings specifying atom pairs in the format:
+            "selection1, selection2"
+        
+        Returns
+        -------
+        np.ndarray
+            2D NumPy array of shape (num_frames, num_pairs) where each row contains the
+            computed distances for the specified pairs in that frame.
+        also adds columns to self.time_df
+        """
+        #compute distances
+        print("computing pairwise distances")
+        start_time = time.time()
+
+        # Convert each input string into a tuple of two selection strings.
+        pair_selections = []
+        for pair in analysis_distances:
+            parts = pair.split(",")
+            if len(parts) != 2:
+                raise ValueError("Each atom pair must be in the format: 'selection1, selection2'")
+            pair_selections.append((parts[0], parts[1]))
+        
+        # Create the MDAnalysis Universe.
+        u = mda.Universe(self.topology, self.traj_file)
+        
+        # Set up AnalysisFromFunction.
+        # Here, we pass u.trajectory as the trajectory to iterate over and u.atoms as the AtomGroup
+        # to be updated on each frame. The 'pair_selections' tuple is passed as an argument to our function.
+        work = mda.analysis.base.AnalysisFromFunction(analysis.compute_pairwise_distance_frame, u.trajectory, u.atoms, pair_selections)
+        work.run(backend = "multiprocessing", n_workers = self.n_jobs)
+
+        self.time_df = pd.concat([self.time_df, pd.DataFrame(work.results.timeseries, columns = analysis_distances)], axis = 1)
+
+        if self.plot:
+            plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df[analysis_distances], "Time (ps)", "Distance (Å)", self.basename, "distances")
+
+        print(f"{round(time.time() - start_time,2)}s used for pairwise distances")
+
+        return work.results.timeseries
+    
+    def calc_rmsf(self, colored_pdb_ending = "_final.pdb", selection = "protein"):
+        """
+        Compute RMSF with on-the-fly trajectory alignment using MDAnalysis transformations, 
+        ensuring low memory usage and parallelization by processing frames in parallel.
+
+        Parameters
+        ----------
+        colored_pdb_ending : str
+            During this analysis a PDB colored according to rmsf is written to basename + colored_pdb_ending
+            Default reads in self.topology and overwrites the final pdb from whatcat_md_runner with the new information
+        Selection : str
+            The selection for which RMSF is calculated. No matter the selection, the alignment and averaging of structures 
+            is done using "protein and name CA"
+
+        Returns:
+            np.ndarray: Computed RMSF values per residue.
+        """
+        #compute RMSF
+        print("computing RMSF")
+        start_time = time.time()
+
+        # Load Universe once to compute the average structure.
+        u = mda.Universe(self.topology, self.traj_file)
+        
+        # Compute the average structure (for alignment reference)
+        avg_struct = mda.analysis.align.AverageStructure(u, u, select="protein and name CA", ref_frame=0).run()
+
+        # Set unit cell dimensions from the first frame before writing
+        avg_struct.results.universe.dimensions = u.trajectory[0].dimensions
+
+        # Write the average structure to file so workers can load it
+        ref_pdb = f"{self.basename}_avg_structure.pdb"
+        avg_struct.results.universe.atoms.write(ref_pdb)
+        while not os.path.exists(ref_pdb):
+            time.sleep(0.1)
+        
+        n_frames = u.trajectory.n_frames
+        
+        # Split frame indices evenly among workers.
+        frame_chunks = np.array_split(range(n_frames), self.n_jobs)
+        
+        #TODO change parallelism scheme here
+        with mp.Pool(self.n_jobs) as pool:
+            results = pool.starmap(
+                analysis.compute_rmsf_chunk,
+                [(self.topology, self.traj_file, list(chunk), selection, ref_pdb)
+                for chunk in frame_chunks]
+            )
+        
+        total_squared_flucts = None
+        total_frames = 0
+        # Aggregate results from all workers.
+        for sum_sq, n in results:
+            if total_squared_flucts is None:
+                total_squared_flucts = sum_sq
+            else:
+                total_squared_flucts += sum_sq
+            total_frames += n
+        
+        rmsf_values = np.sqrt(total_squared_flucts / total_frames)
+
+        #add rmsf values to self.residue_df
+        self.residue_df = pd.concat([self.residue_df, pd.DataFrame(rmsf_values, columns="RMSF")], axis=1)
+        
+        # Save RMSF as B-factors in a PDB file.
+        u_out = mda.Universe(self.topology)
+        u_out.add_TopologyAttr('tempfactors')
+        protein = u_out.select_atoms(selection)
+        
+        # Assign computed RMSF values to residues (assuming one RMSF per CA atom)
+        for residue, r_value in zip(protein.residues, rmsf_values):
+            residue.atoms.tempfactors = r_value
+
+       #write pdb 
+        u_out.atoms.write(f"{self.basename}{colored_pdb_ending}")
+
+        #plot the RMSF values
+        if self.plot:
+            protein = u.select_atoms(selection)
+            residue_list = range(1, len(rmsf_values) +1)
+            plot.line_plotter_2d(residue_list, rmsf_values, "residue", "RMSF (Å)", pdb_name, "1d_rmsf")
+
+            print(f"{round(time.time() - start_time,2)}s used for RMSF")
+
+        
+        return rmsf_values
+    
+    def calc_1d_rmsd(self, selection_list = ["backbone"]):
+        """ 
+        Calculates RMSD over the trajectory for the given selections.
+        Assumes traj is centered and aligned.
+        
+        Parameters:
+            selection_list : list of str
+                The selections for which RMSD is calculated
+
+        Returns:
+            Nothing, results are appended to self.time_df
+        """
+        print("computing 1D RMSD")
+        start_time = time.time()
+
+        u = mda.Universe(self.topology, self.traj_file)
+
+        ref = u.copy()   # Create a copy of the universe in the first frame
+        ref.trajectory[0] #set frame to 0 explicitlly
+
+        for selection in selection_list:
+            rmsd_analysis = mda.analysis.rms.RMSD(u, ref, select=selection, ref_frame=0, superposition = False).run(backend="multiprocessing", n_workers= self.n_jobs)
+            rmsd_backbone = rmsd_analysis.results.rmsd[:, 2]  # Extract RMSD values (column index 2)
+
+            #save the 1D RMSD data
+            temp_df = pd.DataFrame({f"RMSD {selection}": rmsd_backbone})
+            self.time_df = pd.concat([self.time_df, temp_df], axis=1) 
+
+        #plot if plotting
+        if self.plot:
+            # Select all columns that start with "RMSD"
+            rmsd_columns = [col for col in self.time_df.columns if col.startswith("RMSD")]
+
+            # Ensure that at least one RMSD column is found
+            if rmsd_columns:
+                plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df[rmsd_columns], "Time (ps)", "RMSD (Å)", self.basename, "1d_rmsd")
+                
+            else:
+                print("No RMSD columns found in the dataframe.")
+
+        print(f"{round(time.time() - start_time,2)}s used for 1D RMSD")
+
+    def calc_rgyr(self, selection = "protein", legend = None):
+        """ 
+        Calculates the mass weighted radgyr over the trajectory for the given selection.
+        Assumes traj is centered and aligned.
+        Does not actually plot anything as we want all RMSD:s in the same graph. use self.plot_rmsd()
+        
+        Parameters:
+            selection : str
+                The selection for which Rgyr is calculated
+            legend : str
+                The name you want to be added to the column names if the selection string is long
+                column names are labeled as f"Rg_all_{selection}"
+                if none legend = selection
+
+        Returns:
+            Nothing, result is appended to self.time_df
+        """
+        # Compute Radius of Gyration
+        print("computing rgyr")
+        start_time = time.time()
+
+        if legend is None:
+            legend = selection
+
+        u = mda.Universe(self.topology, self.traj_file)
+
+        atomgroup = u.select_atoms(selection)
+        rga = mda.analysis.base.AnalysisFromFunction(analysis.radgyr, u.trajectory, atomgroup, atomgroup.masses, total_mass=np.sum(atomgroup.masses)).run(backend="multiprocessing", n_workers= self.n_jobs)
+
+        rg_labels = [f"Rg_all_{legend}", f"Rg_x_{legend}", f"Rg_y_{legend}", f"Rg_z_{legend}"]
+        rg_df = pd.DataFrame(rga.results.timeseries, columns=rg_labels)
+        self.time_df = pd.concat([self.time_df, rg_df], axis=1)
+
+        if self.plot:
+            plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df[rg_labels], "Time (ps)", "Radius of gyration (Å)", self.basename, "rg")
+
+        print(f"{round(time.time() - start_time,2)}s used for rgyr")
+
+    
+    def write_sparse_traj(self, start_frame = 0, end_frame = -1, max_frames = 500):
+        """ 
+        Writes a sparse trajectory for analysis.
+        Useful for parallel_2d_rmsd as the scaling is N^2
+        Sparsity is currentlly calculated so that the sparse traj will at most have max_frames frames
+        Saves the sparse trajectory to self.basename_sparse.dcd
+        
+        Parameters:
+            start_frame : int
+                The frame at which to start printing the trajectory
+            end_frame : int
+                The frame at which to stop printing the trajectory
+            max_frames : int
+                The number of frames we want at most in the sparse traj
+
+        Returns:
+            str : name of the sparse trajectory
+        """
+        
+        #calculate total frames in query 
+        u = mda.Universe(self.topology, self.traj_file)
+        tot_frames = u.trajectory.n_frames
+
+        #this specifies the size, start and end of the 2D RMSD matrix
+        #BEWARE N^2 scaling operation
+        sparsity = (tot_frames - (tot_frames - self.end_frame) - self.start_frame)/ max_frames #500 is the biggest amount of frames judged to be plausible to compute
+        
+        #Round up and convert to int by exploiting floating point remainder
+        sparsity = int(sparsity // 1 + (sparsity % 1 > 0))
+
+        #calc n_frames in sparse traj for printout to user
+        frames_in_sparse = int((tot_frames - (tot_frames - self.end_frame) - self.start_frame)/ sparsity)
+
+        #if we round down to 0 we round back up
+        if sparsity == 0:
+            sparsity = 1
+
+        self.sparsity = sparsity
+        
+        self.sparse_traj = f"{pdb_name}_trajectory_sparse.dcd"
+        utils.write_trajectory(u, f"{pdb_name}_trajectory_sparse.dcd", sparsity=sparsity, start_frame=start_frame, end_frame=end_frame)
+
+        print(f"wrote sparse traj from frame {start_frame} to {end_frame} with sparsity {sparsity} for a total of {frames_in_sparse} frames \n")
+
+        return self.sparse_traj
+    
+    def remove_sparse_traj(self):
+        """
+        Removes the sparse traj printed for 2D RMSD analysis
+        """
+
+        #remove temp sparse traj
+        os.remove(self.sparse_traj)
+        
+    
+    def calc_2d_rmsd(self, selection_list="backbone", legend_list = None):
+        """ 
+        Compute the full 2D RMSD matrix efficiently using process-based parallelism.
+        runs write_sparse_traj() if self.sparse_traj is not set
+        
+        Parameters:
+            selection_list : list of str 
+                Atom selection string for RMSD calculation.
+            legend_list : list of str
+                The name of the selection you want in the legend
+                eg selection = "protein and name CA", legend = "Calpha"
+                if legend_list = None or lengths dont match, legend_list = selection_list
+
+
+        Returns:
+            Tuple of legend_list and rmsd_matrix_dict
+            rmsd_matrix_dict : dictionary
+                Dict of legend, np.ndarray pairs: The ndarray is the computed symmetric RMSD matrix for a certain legend
+        """
+
+        print(f"computing 2D RMSD")
+        start_time = time.time()
+        delete = False
+
+        if self.sparse_traj is None:
+            self.write_sparse_traj()
+            delete = True
+        
+        u = mda.Universe(self.topology, self.sparse_traj)
+        n_frames = u.trajectory.n_frames
+
+        # Generate all (i, j) pairs for the upper triangle where j > i
+        frame_pairs = [(i, j) for i in range(n_frames) for j in range(i + 1, n_frames)]
+        split_pairs = np.array_split(frame_pairs, self.n_jobs)  # Distribute pairs across jobs
+
+        #check that user input was valid
+        if legend_list is None:
+            legend_list = selection_list
+        elif len(selection_list) != len(legend_list):
+            legend_list = selection_list
+
+        #start the results dict
+        rmsd_matrix_dict = {}
+
+        #iterate over calculations
+        for selection, legend in zip(selection_list, legend_list):
+
+            with mp.Pool(self.n_jobs) as pool:
+                #TODO revise all parallelization here and in RMSF to start more reliablly
+                results_list = pool.starmap(analysis.compute_2d_rmsd_block, [(self.topology, self.traj_file, selection, list(pairs)) for pairs in split_pairs])
+
+            # Assemble the full symmetric RMSD matrix
+            rmsd_matrix = np.zeros((n_frames, n_frames))
+
+            for results in results_list:
+                for (i, j), value in results.items():
+                    rmsd_matrix[i, j] = value  # Upper triangle
+                    rmsd_matrix[j, i] = value  # Mirror to lower triangle
+
+            #write to file
+            pd.DataFrame(rmsd_matrix).to_csv(f"{self.basename}_2d_rmsd_{selection}.csv")
+
+            #add to dict
+            rmsd_matrix_dict["legend"] = rmsd_matrix
+
+            if self.plot:
+                plot.heatmap(rmsd_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {legend}", f"2d_rmsd_{legend}", pdb_name, reporting_time, self.sparsity, self.start_frame)
+
+        #if the user did not start a sparse traj remove the automatically created one
+        if delete:
+            self.remove_sparse_traj()
+
+
+        print(f"{round(time.time() - start_time,2)}s used for 2D RMSD")
+
+        return legend_list, rmsd_matrix_dict
+    
+    def equillibration_check(self, dt = 100):
+        """
+        Uses a linear regression to find out if the simulation is properlly equillibrated
+
+        Parameters:
+            dt: int 
+                for how many ps do you want to analyze if the simulation is equillibrated
+
+        Returns:
+            tuple : R^2 energy, R^2 volume, R^2 temp 
+        """
+        #Panda step 0 corresponds to the first step after equillibration
+        analyzed_snaps = int((dt / self.reporting_time) +1) #how many reports are within 100 ps, +1 because noninclusive slicing
+        step = self.time_df["Step"][0:analyzed_snaps]  # Produces a Pandas Series
+        potential_energy = self.time_df["Potential Energy (kJ/mole)"][0:analyzed_snaps]
+        temperature = self.time_df["Temperature (K)"][0:analyzed_snaps]
+        volume = self.time_df["Box Volume (nm^3)"][0:analyzed_snaps]
+
+        #calculate if system shows trends in some direction which indicates a too short equillibration
+        regr_energy = scipy.stats.linregress(step, potential_energy)
+        regr_volume = scipy.stats.linregress(step, volume)
+        regr_temp = scipy.stats.linregress(step, temperature)
+        print(f"R^2 for first 100 ps is good.\nenergy: {regr_energy.rvalue ** 2} \nvolume: {regr_volume.rvalue ** 2} \ntemp: {regr_temp.rvalue ** 2}")
+        
+        return regr_energy.rvalue ** 2, regr_volume.rvalue ** 2, regr_temp.rvalue ** 2
+    
+    def save_df_to_csv(self):
+        """
+        saves time_df and residue_df to csv
+
+        Parameters:
+            nothing
+
+        Returns:
+            nothing
+        """
+
+        self.time_df.to_csv(f"{self.basename}_time.csv")
+        self.residue_df.to_csv(f"{self.basename}_residue.csv")
+
+
+if __name__ == "__main__":
+
+    #TODO create a wrapper function of this that presents the user with a equillibrated simulation
+    #right away
+    whatcat_md = Whatcat_md_runner.init_from_parse_args()
+    if whatcat_md.restart is not True:
+        whatcat_md.fix_pdb()
+        whatcat_md.create_openmm_system()
+        whatcat_md.create_openmm_simulation()
+        whatcat_md.equillibrate_simulation()
+    elif whatcat_md.restart is True:
+        whatcat_md.restart_simulation_from_file()
+
+    simulation = whatcat_md.run_prod_simulation()
+
+    analysis_resnames = whatcat_md.analysis_resnames
+    analysis_distances = whatcat_md.analysis_distances
+
+    analysis_resnames += ["backbone"]
+
+    whatcat_analysis = whatcat_md.create_analysis()
+    whatcat_analysis.read_md_log()
+    whatcat_analysis.equillibration_check()
+
+    whatcat_analysis.center_align_traj()
+
+    whatcat_analysis.calc_rgyr()
+    whatcat_analysis.calc_1d_rmsd(analysis_resnames)
+    whatcat_analysis.calc_rmsf()
+
+    whatcat_analysis.calc_pairwise_distances(analysis_distances)
+    whatcat_analysis.calc_2d_rmsd()
+
+    whatcat_analysis.save_df_to_csv()
+
+    print(whatcat_analysis.time_df.head())
+    print(whatcat_analysis.residue_df.head())
+
 

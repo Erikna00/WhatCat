@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-def line_plotter_2d(x, y, x_var, y_var, pdb_name, file_ending):
+def line_plotter_2d(x, y, x_var, y_var, basename, plot_type):
     """
     Plots a 2D dataset using matplotlib.
     
@@ -11,8 +11,8 @@ def line_plotter_2d(x, y, x_var, y_var, pdb_name, file_ending):
     y: y-axis dataset (list, numpy array, or pandas Series/DataFrame)
     xvar: x-axis label (string)
     yvar: y-axis label (string)
-    pdb_name: Prefix for the output filename
-    file_ending: Suffix for the output filename
+    basename: Prefix for the output filename
+    plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
     
     Handles multiple y columns by adding a legend.
     if x_var == "Time (ps)" we do a check to see if we can convert to ns
@@ -36,10 +36,10 @@ def line_plotter_2d(x, y, x_var, y_var, pdb_name, file_ending):
     plt.xlabel(x_var)
     plt.ylabel(y_var)
     plt.title(f"{y_var} vs {x_var}")  # Optional: Add title
-    plt.savefig(f"{pdb_name}_{file_ending}.png")
+    plt.savefig(f"{basename}_{plot_type}.png")
     plt.close()
 
-def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, reporting_time, sparsity = 1, start_frame = 0):
+def heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, reporting_time, sparsity = 1, start_frame = 0):
     """
     Plots a heatmap of a 2D matrix
     matrix = 2d symmetric matrix
@@ -47,7 +47,8 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     y_var = name of the y variabel
     heat_var = name of the heat variabel
     titel = string of titel
-    file_suffix = ending of saved file name
+    basename: Prefix for the output filename
+    plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
 
     if x_var and y_var == "Time (ps)" we do a check to see if we can convert to ns
     """
@@ -76,5 +77,5 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, file_suffix,  pdb_name, repor
     plt.xlabel(x_var)
     plt.ylabel(y_var)
     plt.title(titel)
-    plt.savefig(f"{pdb_name}_{file_suffix}.png")
+    plt.savefig(f"{basename}_{plot_type}.png")
     plt.close()
