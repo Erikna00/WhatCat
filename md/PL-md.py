@@ -1066,7 +1066,8 @@ if __name__ == "__main__":
     whatcat_analysis.read_md_log()
     whatcat_analysis.equillibration_check()
 
-    whatcat_analysis.center_align_traj()
+    whatcat_analysis.center_align_traj() #this one produces a erroneous DCD file. I suspect the box dimensions are scuffed
+    #Using mdconvert to convert the DCD file to a DCD file restores functionallity
 
     whatcat_analysis.calc_rgyr()
     whatcat_analysis.calc_1d_rmsd(analysis_resnames)
