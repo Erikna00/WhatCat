@@ -39,7 +39,7 @@ def compute_pairwise_distance_frame(atomgroup, pair_selections):
 
 def compute_rmsf_chunk(pdb_filename, traj_filename, frame_indices, selection, ref_pdb):
     """
-    Compute mean squared fluctuations for a subset of frames, applying on‐the‐fly alignment.
+    Compute mean squared fluctuations for a subset of frames, applying on‐the‐fly alignment to ref_pdb.
     
     Parameters:
         pdb_filename (str): Path to topology file.

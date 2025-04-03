@@ -25,18 +25,24 @@ warnings.filterwarnings('ignore')
 #filter biopython warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
 
+#Immediate
+#TODO fix restart
+#TODO fix so that analysis has a self.u
+#TODO make make sure all plots start from 0
 
-#TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
-#TODO add the ability to run sequential replicates of the same simulation via argparse
-#TODO add something to restart such that reporting_time is preserved
-#TODO Maybe fix so we restart from _final
 
-#TODO add analysis to Whatcat_md or make it an own class
-#TODO change all function docstrings to match parallel_2d_rmsd
-
-#TODO Fix RMSF bug
+#Medium term
+#TODO Fix RMSF parallelization bug
 #TODO consider redoing the md_runner class  such that all arguments are provided only to the function when they are used instead of __init__
 #then it would make sens to move argparse to if __name__ = main
+#TODO change all function docstrings to match parallel_2d_rmsd
+
+#Long term
+#TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
+#TODO add the ability to run sequential replicates of the same simulation via argparse
+#TODO add something to restart such that reporting_time is preserved when restarting
+#TODO Maybe fix so we restart from _final
+
 
 class Whatcat_md_runner():
     def __init__(self, 
@@ -342,7 +348,7 @@ class Whatcat_md_runner():
             #if no analysis requested add all ligands
             if len(self.analysis_resnames) == 0:
                 for ligand_name in lig_resnames:
-                    self.analysis_resnames.append(ligand_name)
+                    self.analysis_resnames.append(f"resname {ligand_name}")
             
         #if not simulating with ligand
         elif self.ligand_files == None:
@@ -397,8 +403,6 @@ class Whatcat_md_runner():
     def restart_simulation_from_file(self, pdb = None, restart_pdb_file=None): 
         """
         Reads xml restart files and restarts a simulation object from the same.
-        Requieres that pdb_file is set to _final.pdb from a previous simulation
-        Alternativelly pdb_file can be set to a path to the _restart.pdb file.
         If pdb_file is set, self.pdbfile is overwritten and self.name is set to the restart_pdb_file with _restart removed
         else self.pdb_name is inspected and _restart is removed if present
         """
@@ -428,7 +432,7 @@ class Whatcat_md_runner():
 
         self.simulation = simulation
         self.timestep = int(simulation.integrator.getStepSize().value_in_unit(femtosecond))
-        print(f"\nSimulation restarted with stepsize of {self.timestep} fs\n")
+        print(f"\nSimulation restarted with stepsize of {self.timestep} fs")
 
         self.simulation = simulation
         self.ran_time = simulation.context.getState().getTime()
@@ -549,9 +553,6 @@ class Whatcat_md_analysis:
         self.reporting_time = reporting_time
         self.simulation_time_ns = simulation_time_ns
         
-        self.sparsity = 1
-        self.start_frame = 0
-        self.end_frame = -1
         self.sparse_traj = None
 
         self.time_df = pd.DataFrame()
@@ -607,9 +608,10 @@ class Whatcat_md_analysis:
         Optionally aligns the protein to the first frame to remove tumbling
         Aligning is necessary for some of the other analyses in this class to work
 
-        pdb_ending = the fileending which should be added to self.basename to write the centered topology to
+        pdb_ending = the fileending which should be added to self.basename to write the centered structure to
         topology_ending = the fileending which should be added to self.basename to write the centered trajectory to
-        defaults are set to overwrite the files from Whatcat_md_runner
+        defaults are set to overwrite the files from Whatcat_md_runner.
+        self.traj_file will be set to self.basename + topology_ending
 
         returns nothing and does not add to df
         """
@@ -620,9 +622,8 @@ class Whatcat_md_analysis:
 
         #center proteins, This also resets the time of the first snapshot to 0 ps thus removing equillibration time
         centered_traj_name = f"{self.basename}{topology_ending}"
+        self.traj_file = centered_traj_name
         final_pdb = f"{self.basename}{pdb_ending}"
-
-        print(f"{self.basename}_trajectory.dcd")
 
         mda_traj = utils.parallel_center_trajectory(self.topology, f"{self.basename}_trajectory.dcd", align=self.align, n_jobs=self.n_jobs, output_filename = centered_traj_name) 
 
@@ -658,6 +659,11 @@ class Whatcat_md_analysis:
             computed distances for the specified pairs in that frame.
         also adds columns to self.time_df
         """
+
+        #if empty input
+        if len(analysis_distances):
+            return None
+        
         #compute distances
         print("computing pairwise distances")
         start_time = time.time()
@@ -688,7 +694,7 @@ class Whatcat_md_analysis:
 
         return work.results.timeseries
     
-    def calc_rmsf(self, colored_pdb_ending = "_final.pdb", selection = "protein"):
+    def calc_ca_rmsf(self, colored_pdb_ending = "_final.pdb"):
         """
         Compute RMSF with on-the-fly trajectory alignment using MDAnalysis transformations, 
         ensuring low memory usage and parallelization by processing frames in parallel.
@@ -706,23 +712,22 @@ class Whatcat_md_analysis:
             np.ndarray: Computed RMSF values per residue.
         """
         #compute RMSF
-        print("computing RMSF")
+        print("computing protein Ca RMSF")
         start_time = time.time()
+        
+        #dont change without looking into alignment and returned matrix size
+        #If you want another RMSF you will have to write another function and adapt analysis.compute_rmsf_chunk
+        selection = "protein and name CA and not resname ACE NME"
 
         # Load Universe once to compute the average structure.
         u = mda.Universe(self.topology, self.traj_file)
         
         # Compute the average structure (for alignment reference)
-        avg_struct = mda.analysis.align.AverageStructure(u, u, select="protein and name CA", ref_frame=0).run()
+        avg_pdb=f"{self.basename}_avg_structure.pdb"
+        avg_struct = mda.analysis.align.AverageStructure(u, u, select=selection, ref_frame=0, filename=avg_pdb).run()
 
         # Set unit cell dimensions from the first frame before writing
         avg_struct.results.universe.dimensions = u.trajectory[0].dimensions
-
-        # Write the average structure to file so workers can load it
-        ref_pdb = f"{self.basename}_avg_structure.pdb"
-        avg_struct.results.universe.atoms.write(ref_pdb)
-        while not os.path.exists(ref_pdb):
-            time.sleep(0.1)
         
         n_frames = u.trajectory.n_frames
         
@@ -733,7 +738,7 @@ class Whatcat_md_analysis:
         with mp.Pool(self.n_jobs) as pool:
             results = pool.starmap(
                 analysis.compute_rmsf_chunk,
-                [(self.topology, self.traj_file, list(chunk), selection, ref_pdb)
+                [(self.topology, self.traj_file, list(chunk), selection, avg_pdb)
                 for chunk in frame_chunks]
             )
         
@@ -750,10 +755,10 @@ class Whatcat_md_analysis:
         rmsf_values = np.sqrt(total_squared_flucts / total_frames)
 
         #add rmsf values to self.residue_df
-        self.residue_df = pd.concat([self.residue_df, pd.DataFrame(rmsf_values, columns="RMSF")], axis=1)
+        self.residue_df = pd.concat([self.residue_df, pd.DataFrame(rmsf_values, columns=["RMSF"])], axis=1)
         
         # Save RMSF as B-factors in a PDB file.
-        u_out = mda.Universe(self.topology)
+        u_out = mda.Universe(self.topology, self.traj_file)
         u_out.add_TopologyAttr('tempfactors')
         protein = u_out.select_atoms(selection)
         
@@ -761,14 +766,15 @@ class Whatcat_md_analysis:
         for residue, r_value in zip(protein.residues, rmsf_values):
             residue.atoms.tempfactors = r_value
 
-       #write pdb 
+        #write pdb 
+        u_out.trajectory[0]
         u_out.atoms.write(f"{self.basename}{colored_pdb_ending}")
 
         #plot the RMSF values
         if self.plot:
             protein = u.select_atoms(selection)
             residue_list = range(1, len(rmsf_values) +1)
-            plot.line_plotter_2d(residue_list, rmsf_values, "residue", "RMSF (Å)", pdb_name, "1d_rmsf")
+            plot.line_plotter_2d(residue_list, rmsf_values, "residue", "RMSF (Å)", self.basename, "1d_rmsf")
 
             print(f"{round(time.time() - start_time,2)}s used for RMSF")
 
@@ -879,15 +885,22 @@ class Whatcat_md_analysis:
         u = mda.Universe(self.topology, self.traj_file)
         tot_frames = u.trajectory.n_frames
 
+        #add args to class variables to plot correctlly later on
+        self.start_frame = start_frame
+        self.end_frame = end_frame
+
+        if end_frame == -1 or end_frame >= tot_frames -1 :
+            end_frame = tot_frames -1
+
         #this specifies the size, start and end of the 2D RMSD matrix
         #BEWARE N^2 scaling operation
-        sparsity = (tot_frames - (tot_frames - self.end_frame) - self.start_frame)/ max_frames #500 is the biggest amount of frames judged to be plausible to compute
+        sparsity = (tot_frames - (tot_frames - end_frame) - start_frame)/ max_frames #500 is the biggest amount of frames judged to be plausible to compute
         
         #Round up and convert to int by exploiting floating point remainder
         sparsity = int(sparsity // 1 + (sparsity % 1 > 0))
 
         #calc n_frames in sparse traj for printout to user
-        frames_in_sparse = int((tot_frames - (tot_frames - self.end_frame) - self.start_frame)/ sparsity)
+        frames_in_sparse = int((tot_frames - (tot_frames - end_frame) - start_frame)/ sparsity)
 
         #if we round down to 0 we round back up
         if sparsity == 0:
@@ -895,8 +908,8 @@ class Whatcat_md_analysis:
 
         self.sparsity = sparsity
         
-        self.sparse_traj = f"{pdb_name}_trajectory_sparse.dcd"
-        utils.write_trajectory(u, f"{pdb_name}_trajectory_sparse.dcd", sparsity=sparsity, start_frame=start_frame, end_frame=end_frame)
+        self.sparse_traj = f"{self.basename}_trajectory_sparse.dcd"
+        utils.write_trajectory(u, self.sparse_traj, sparsity=sparsity, start_frame=start_frame, end_frame=end_frame)
 
         print(f"wrote sparse traj from frame {start_frame} to {end_frame} with sparsity {sparsity} for a total of {frames_in_sparse} frames \n")
 
@@ -911,7 +924,7 @@ class Whatcat_md_analysis:
         os.remove(self.sparse_traj)
         
     
-    def calc_2d_rmsd(self, selection_list="backbone", legend_list = None):
+    def calc_2d_rmsd(self, selection_list=["backbone"], legend_list = None):
         """ 
         Compute the full 2D RMSD matrix efficiently using process-based parallelism.
         runs write_sparse_traj() if self.sparse_traj is not set
@@ -977,7 +990,7 @@ class Whatcat_md_analysis:
             rmsd_matrix_dict["legend"] = rmsd_matrix
 
             if self.plot:
-                plot.heatmap(rmsd_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {legend}", f"2d_rmsd_{legend}", pdb_name, reporting_time, self.sparsity, self.start_frame)
+                plot.heatmap(rmsd_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {legend}", f"2d_rmsd_{legend}", self.basename, self.reporting_time, self.sparsity, self.start_frame)
 
         #if the user did not start a sparse traj remove the automatically created one
         if delete:
@@ -1025,8 +1038,8 @@ class Whatcat_md_analysis:
             nothing
         """
 
-        self.time_df.to_csv(f"{self.basename}_time.csv")
-        self.residue_df.to_csv(f"{self.basename}_residue.csv")
+        self.time_df.to_csv(f"{self.basename}_time.csv", index=False)
+        self.residue_df.to_csv(f"{self.basename}_residue.csv", index=False)
 
 
 if __name__ == "__main__":
@@ -1057,10 +1070,13 @@ if __name__ == "__main__":
 
     whatcat_analysis.calc_rgyr()
     whatcat_analysis.calc_1d_rmsd(analysis_resnames)
-    whatcat_analysis.calc_rmsf()
+    whatcat_analysis.calc_ca_rmsf()
 
     whatcat_analysis.calc_pairwise_distances(analysis_distances)
+
+    whatcat_analysis.write_sparse_traj()
     whatcat_analysis.calc_2d_rmsd()
+    whatcat_analysis.remove_sparse_traj()
 
     whatcat_analysis.save_df_to_csv()
 
