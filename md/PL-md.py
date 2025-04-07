@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import MDAnalysis as mda
+import mdtraj as mdtraj
 import scipy
 
 from utils import utils, analysis, plot
@@ -477,7 +478,6 @@ class Whatcat_md_runner():
     def run_prod_simulation(self, simulation = None, simulation_time_ns=None, reporting_time = None):
         """
         Runs the production NPT simulation for the set amount of time.
-        Re
         """
         simulation = self.parse_set_default("simulation", simulation)
         simulation_time_ns = self.parse_set_default("simulation_time_ns", simulation_time_ns)
@@ -537,12 +537,21 @@ class Whatcat_md_analysis:
         This class analyzes MD simulations by wrapping MDAnalysis in a parallelized executor using
         divide and conquer methodologies when the MDAnalysis function does not have native parallelization
 
-        topology = A PDB file or OPENMM topology. Needs to contain bonding information for center_align_traj to work
+        Parameters
+            topology : str or OPENMM topology compatible with MDAnalysis 
+                A PDB file or OPENMM topology. Needs to contain bonding information for center_align_traj to work
                 This is fulfilled by passing simulation.topology from openmm
-        traj_file = A trajectory file such as .dcd
-        self.basename = basename for file output
-        align = Bool if you want trajectory aligned to first frame
-        plot = Bool if you want plots or only save to df
+            traj_file : str
+                A trajectory file such as .dcd
+            self.basename : str
+                basename for file output
+            align : Bool 
+                if you want trajectory aligned to first frame
+            plot : 
+                Bool if you want plots or only save to df
+        
+        Returns
+            A whatcat_md_analysis object
         """
         self.traj_file = traj_file
         self.topology = topology
@@ -566,17 +575,15 @@ class Whatcat_md_analysis:
         Reads the log file from whatcat_md_runner into self.time_df
 
         Parameters
-        ----------
-        md_log : str
-            Path to a log file. default corresponds to basename_md_log.txt which works for files from whatcat_md_runner
-            if None, f"{self.basename}_md_log.txt"
+            md_log : str
+                Path to a log file. default corresponds to basename_md_log.txt which works for files from whatcat_md_runner
+                if None, f"{self.basename}_md_log.txt"
 
         Returns
-        -------
-        np.ndarray
-            2D NumPy array of shape (num_frames, num_pairs) where each row contains the
-            computed distances for the specified pairs in that frame.
-        also adds columns to self.time_df
+            np.ndarray
+                2D NumPy array of shape (num_frames, num_pairs) where each row contains the
+                computed distances for the specified pairs in that frame.
+            also adds columns to self.time_df
         """
         if md_log is None:
             md_log = f"{self.basename}_md_log.txt"
@@ -602,18 +609,27 @@ class Whatcat_md_analysis:
         plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Temperature (K)"], "Time (ps)", "Temperature (K)", self.basename, "temperature")
         plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Box Volume (nm^3)"], "Time (ps)", "Box Volume (nm^3)", self.basename, "volume")
 
-    def center_align_traj(self, pdb_ending = "_final.pdb", topology_ending = "_trajectory.dcd"):
+    def center_align_traj(self, pdb_ending = "_final.pdb", topology_ending = "_trajectory.dcd", topology_pdb = None):
         """
         Centers the protein in the periodic box.
         Optionally aligns the protein to the first frame to remove tumbling
         Aligning is necessary for some of the other analyses in this class to work
 
-        pdb_ending = the fileending which should be added to self.basename to write the centered structure to
-        topology_ending = the fileending which should be added to self.basename to write the centered trajectory to
-        defaults are set to overwrite the files from Whatcat_md_runner.
-        self.traj_file will be set to self.basename + topology_ending
+        Parameters
+            pdb_ending : str
+                the fileending which should be added to self.basename to write the centered structure to
+            topology_ending : str
+                the fileending which should be added to self.basename to write the centered trajectory to
+                defaults are set to overwrite the files from Whatcat_md_runner.
+                self.traj_file will be set to self.basename + topology_ending
+            
+            topology_pdb : str
+                The filepath to the PDB used as topology when converting the DCD back from using a MDA header to using a OPENMM header.
+                This issue stems from the DCD format not being well defined and this is a hacky solution.
+                If left as None, topology_pdb = f"{self.basename}_final.pdb" to conform with whatcats MD runner
 
-        returns nothing and does not add to df
+        Returns
+            Nothing and does not add to df
         """
         
         print("Centering and aligning protein in PBC" if self.align else "Centering protein in PBC")
@@ -634,6 +650,15 @@ class Whatcat_md_analysis:
         if self.align == False:
             print("WARNING trajectory was not aligned. Subsequent analysis might be inaccurate")
 
+        #convert the DCD back to OPENMM compatible format
+        #DO NOT CHANGE OR MEDDEL WITH THIS
+        #The issue is complex 
+        if topology_pdb is None:
+            topology_pdb = f"{self.basename}_final.pdb"
+
+        md_traj = mdtraj.load(centered_traj_name, top=final_pdb)    
+        md_traj.save_dcd(centered_traj_name)
+
         print(f"{round(time.time() - start_time,2)}s used for centering")
 
     def calc_pairwise_distances(self, analysis_distances):
@@ -643,21 +668,19 @@ class Whatcat_md_analysis:
         queries separated by a comma.
         
         Parameters
-        ----------
-        pdb_file : str
-            Path to the topology (PDB) file.
-        traj_file : str
-            Path to the trajectory file.
-        atom_pairs : np.ndarray or list of str
-            Array/list of strings specifying atom pairs in the format:
-            "selection1, selection2"
+            pdb_file : str
+                Path to the topology (PDB) file.
+            traj_file : str
+                Path to the trajectory file.
+            atom_pairs : np.ndarray or list of str
+                Array/list of strings specifying atom pairs in the format:
+                "selection1, selection2"
         
         Returns
-        -------
-        np.ndarray
-            2D NumPy array of shape (num_frames, num_pairs) where each row contains the
-            computed distances for the specified pairs in that frame.
-        also adds columns to self.time_df
+            np.ndarray
+                2D NumPy array of shape (num_frames, num_pairs) where each row contains the
+                computed distances for the specified pairs in that frame.
+            also adds columns to self.time_df
         """
 
         #if empty input
@@ -700,13 +723,12 @@ class Whatcat_md_analysis:
         ensuring low memory usage and parallelization by processing frames in parallel.
 
         Parameters
-        ----------
-        colored_pdb_ending : str
-            During this analysis a PDB colored according to rmsf is written to basename + colored_pdb_ending
-            Default reads in self.topology and overwrites the final pdb from whatcat_md_runner with the new information
-        Selection : str
-            The selection for which RMSF is calculated. No matter the selection, the alignment and averaging of structures 
-            is done using "protein and name CA"
+            colored_pdb_ending : str
+                During this analysis a PDB colored according to rmsf is written to basename + colored_pdb_ending
+                Default reads in self.topology and overwrites the final pdb from whatcat_md_runner with the new information
+            Selection : str
+                The selection for which RMSF is calculated. No matter the selection, the alignment and averaging of structures 
+                is done using "protein and name CA"
 
         Returns:
             np.ndarray: Computed RMSF values per residue.
