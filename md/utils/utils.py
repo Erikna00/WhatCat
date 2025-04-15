@@ -62,7 +62,10 @@ def prepare_ligand_md(file, pH = 7.4):
     """
     Uses Openbabel to convert a file to sdf
     Can optionally also reprotonate the molecule to match a certain total charge
-    pH = float for pH of None to indicate that file is correctlly protonated and charged
+
+    Parameters:
+        pH : float 
+            Indicates pH for protonation, None to indicate that file is correctlly protonated and charged
     """
 
     #split filename
@@ -117,10 +120,14 @@ def write_trajectory(mda_universe, filename, sparsity = 1, start_frame=0, end_fr
     Writes the mda.universe trajectory to a file.
     
     Parameters:
-        mda_universe (MDAnalysis.Universe): The Universe containing the centered trajectory.
-        filename (str): The output filename (e.g., "centered_trajectory.dcd").
-        sparsity (int): Every nth frame will be written to traj
-        start and end frame (int): self explanatory, default is whole trajectory 
+        mda_universe : MDAnalysis.Universe 
+            The Universe containing the centered trajectory.
+        filename : str 
+            The output filename (e.g., "centered_trajectory.dcd").
+        sparsity : int 
+            Every nth frame will be written to traj
+        start and end frame : int 
+            self explanatory, default is whole trajectory 
     """
     with mda.Writer(filename, mda_universe.atoms.n_atoms) as writer:
         for ts in mda_universe.trajectory[start_frame:end_frame:sparsity]:
@@ -133,13 +140,21 @@ def center_align_process_block(structure_filename, traj_filename, start, stop, t
       - Load the Universe.
       - Process frames [start, stop) by centering (and aligning) the protein.
       - Write the centered frames to a temporary file.
+
     Parameters:
-        structure_filename (str): Path to the topology file (e.g. PDB).
-        traj_filename (str): Path to the trajectory file.
-        start (int): Starting frame index (inclusive).
-        stop (int): Ending frame index (exclusive).
-        temp_filename (str): Filename for the temporary output.
-        align (bool): Wether to align protein to itself over traj or not. Necessary for some RMSD and RMSF dependant analysis
+        structure_filename : str 
+            Path to the topology file (e.g. PDB).
+        traj_filename :str 
+            Path to the trajectory file.
+        start : int
+            Starting frame index (inclusive).
+        stop : int 
+            Ending frame index (exclusive).
+        temp_filename :str
+            Filename for the temporary output.
+        align :bool 
+            Wether to align protein to itself over traj or not. Necessary for some RMSD and RMSF dependant analysis
+
     Returns:
         str: The temporary filename written.
     """
@@ -183,11 +198,13 @@ def parallel_center_trajectory(structure_filename, traj_filename, align, n_jobs=
     """
     Splits the trajectory into blocks and processes each block in parallel.
     After processing, the temporary files are concatenated into one final trajectory.
+
     Parameters:
         structure_filename (str): Path to the topology file. Also accepts OPENMM topologies which also includes bonding information.
         traj_filename (str): Path to the trajectory file.
         n_jobs (int): Number of parallel blocks (jobs) to use.
         output_filename (str): Name of the final centered trajectory file.
+
     Returns:
         mda universe from the centered trajectory
     """

@@ -42,11 +42,16 @@ def compute_rmsf_chunk(pdb_filename, traj_filename, frame_indices, selection, re
     Compute mean squared fluctuations for a subset of frames, applying on‐the‐fly alignment to ref_pdb.
     
     Parameters:
-        pdb_filename (str): Path to topology file.
-        traj_filename (str): Path to trajectory file.
-        frame_indices (list of int): Frames assigned to this worker.
-        selection (str): Atom selection string.
-        ref_positions (np.ndarray): Reference positions (for the selected atoms) for alignment.
+        pdb_filename : str 
+            Path to topology file.
+        traj_filename : str
+            Path to trajectory file.
+        frame_indices : list of int 
+            Frames assigned to this worker.
+        selection : str
+            Atom selection string.
+        ref_positions : np.ndarray 
+            Reference positions (for the selected atoms) for alignment.
         
     Returns:
         np.ndarray: Sum of squared fluctuations per atom.
@@ -81,10 +86,14 @@ def compute_2d_rmsd_block(pdb_filename, traj_filename, selection, frame_pairs):
     Compute a block of the upper-triangle RMSD matrix.
     
     Parameters:
-        pdb_filename (str): Path to the topology file.
-        traj_filename (str): Path to the trajectory file.
-        selection (str): Atom selection string for RMSD calculation.
-        frame_pairs (list of tuples): Pairs of frame indices (i, j) to compute RMSD.
+        pdb_filename : str 
+            Path to the topology file.
+        traj_filename : str 
+            Path to the trajectory file.
+        selection : str 
+            Atom selection string for RMSD calculation.
+        frame_pairs : list of tuples
+            Pairs of frame indices (i, j) to compute RMSD.
 
     Returns:
         dict: Computed RMSD values, indexed by (i, j).
@@ -105,6 +114,11 @@ def compute_2d_rmsd_block(pdb_filename, traj_filename, selection, frame_pairs):
     return rmsd_results
 
 def radgyr(atomgroup, masses, total_mass=None):
+    """
+    This function calculates radius of gyration for one frame in a MDA trajectory.
+    Used by whatcat_md_analysis.calc_rgyr.
+    """
+
     # coordinates change for each frame
     coordinates = atomgroup.positions
     center_of_mass = atomgroup.center_of_mass()
