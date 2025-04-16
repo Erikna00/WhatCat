@@ -255,11 +255,8 @@ def parallel_center_trajectory(structure_filename, traj_filename, align, n_jobs=
             pool.starmap(center_align_process_block, tasks)
         
         # Combine temporary files into the final output trajectory.
-        with mda.Writer(output_filename, u.atoms.n_atoms) as writer:
-            for temp_file in temp_files:
-                temp_u = mda.Universe(structure_filename, temp_file)
-                for ts in temp_u.trajectory:
-                    writer.write(temp_u.atoms)
+        u = mda.Universe(structure_filename, temp_files)
+        u.atoms.write(output_filename, frames="all")
         
         # Cleanup is handled by TemporaryDirectory (all files in tmpdir are removed automatically)
 
