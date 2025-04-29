@@ -27,16 +27,14 @@ warnings.filterwarnings('ignore')
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
 
 #Immediate
-#TODO fix restart
 #TODO fix so that analysis has a self.u
 #TODO make make sure all plots start from 0
+#TODO strip prefixes before adding to plot legend using utils.strip_str_from_list
 
 
 #Medium term
 #TODO Fix RMSF parallelization bug
-#TODO consider redoing the md_runner class  such that all arguments are provided only to the function when they are used instead of __init__
-#then it would make sens to move argparse to if __name__ = main
-#TODO change all function docstrings to match parallel_2d_rmsd
+#TODO Fix so that analysis resnames and dist are read from file when restarting (combine with dumping reporting time)
 
 #Long term
 #TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
@@ -50,7 +48,6 @@ class Whatcat_md_runner():
                  pdb_file, ligand_files = None, restart = False,  platform="CUDA",
                  pdb_fixer=2, charge_correct = True, solvate = 2, ph = 7.4,
                  simulation_time_ns=None, timestep=4, reporting_time=10, equillibration_time=50,
-                 analysis_resnames =[], analysis_distances = [], 
                  debug = False ):
         """
         Creates a Whatcat_md object from python arguments.
@@ -77,8 +74,7 @@ class Whatcat_md_runner():
         reporting_time - how often to save to DCD reporter in ps
         equillibration_time - how long to equillibrate for in ps
         
-        analysis_resnames - for which MDAnalysis selctions to run more specific analysis
-        analysis_distances - which distances shall be monitored during the simulation
+        analysis_resnames - internal variable set to all small molecule components
         """
         #TODO should __init__ have defaults? currentlly we can initillize values from all functions anyway
         
@@ -97,10 +93,9 @@ class Whatcat_md_runner():
         self.timestep = timestep #fs
         self.reporting_time = reporting_time #ps
         self.equillibration_time = equillibration_time #ps
-
-        self.analysis_resnames = list(analysis_resnames)
-        self.analysis_distances = list(analysis_distances)
         
+        self.analysis_resnames = []
+
         self.debug = debug
 
         self.pdb_name = os.path.splitext(pdb_file)[0]
@@ -116,64 +111,6 @@ class Whatcat_md_runner():
         #TODO is this reasonable to do here after code refactoring to class?
         if restart == True:
             self.pdb_name = self.pdb_name.replace("_restart", "")
-
-    @classmethod
-    def init_from_parse_args(cls):
-        """
-        Starts a Whatcat_md class using command line arguments to run __init__
-        """
-
-        #Start the command line parser
-        parser = argparse.ArgumentParser(
-                            prog='POS MD script',
-                            description=(
-                            "This script sets up a OPENMM  simulation of a protein (amber ff14)," 
-                            "any small molecules/cofactors (Sage 2.2.1) as well as water/ions using a 12-6 model (amber ff14/tip3pfb).\n"),
-                            epilog="Use with care and acknowledge Erik Sundén and the Per-Olof Syrén group at KTH Sweden")
-
-        parser.add_argument("pdb", type = str, help = "PDB structure of the structure you want to simulate. \nWARNING PDB may not contain any ligands. These must be provided from sdf files") 
-        parser.add_argument("-l", "--lig", type = str, action="append", default = None, help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
-                                                                            "Convenientlly produced by drawing in chemdraw and exporting as SDF then docking with added hydrogens."
-                                                                            "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep."
-                                                                            "WARNING charges MUST be assigned in the sdf file, use -cc True to autoassign based on pH"
-                                                                            "or whatcat/md/molecule_inspector.ipynb which both converts files and visuallizes result")) 
-        parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from restart xml files if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
-        parser.add_argument("--platform", type = str, default= "CUDA", choices=["CUDA", "OPENCL", "CPU"], help="Sets the simulation platform, default = CUDA", required=False)
-
-        parser.add_argument("--pdbfixer", type = int, default = 2, help = ("0, 1, 2 depending on if your structure shall be PDBfixed." 
-                                                                            "default = 2 removes and readds hydrogens as well as tries to find missing atoms"
-                                                                            "good if you have a SEQRES and unresolved loops as well as unhandled disulfide bonds."
-                                                                            "=1 fixes loops and so on but retains hydrogens in structure. Good if manual protonation was done"
-                                                                            "=0 does not fix your pdb, make sure it is good" ))
-        parser.add_argument("-cc", "--charge_correct", type = str, default= "False", choices=["true", "True", "false", "False"], help="Whether to charge correct ligands or not. also converts files to sdf if ligand not sdf")
-        parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
-        parser.add_argument("-ph", "--ph", type = float, default= 7.4, help="Sets pH for the simulation using PDBfixer and if using -cc openbabel")
-
-        parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
-        parser.add_argument("-rt", "--report_time", type = float, default= 10, help="Reporting frequency in ps")
-        parser.add_argument("-eqt", "--equillibration_time", type = float, default= 50, help="Equillibration time in ps, do not set lower than 50 ps. \nUsed for both NPT and NVT equillibration")
-        parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,4,5], help="Simulation timestep in fs. Accepts ints")
-        
-        parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
-                                                                                    "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
-        parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
-        a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
-        
-        parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
-
-        # Parse arguments
-        args = parser.parse_args()
-
-        #print command line
-        print(f"Parsed arguments: {vars(args)}\n")
-        print(parser.description)
-        print(parser.epilog + "\n")
-
-        return cls(pdb_file=args.pdb, ligand_files = args.lig, restart = utils.str_to_bool(args.restart), platform=args.platform, 
-                 pdb_fixer=args.pdbfixer, charge_correct = args.charge_correct, solvate = args.solvate, ph = args.ph,
-                 simulation_time_ns=args.timeprod, timestep=args.timestep, reporting_time=args.report_time, equillibration_time=args.equillibration_time,
-                 analysis_resnames =args.resname, analysis_distances = args.dist, 
-                 debug = args.debug)
 
     def parse_set_default(self, attr_name, value):
         """
@@ -326,9 +263,6 @@ class Whatcat_md_runner():
                 #add to list which will be added to topology
                 ligand_mol.append(ligand)
 
-            #if analysis not specified, analyze all added residues
-            if self.analysis_resnames is None:
-                self.analysis_resnames = lig_resnames
 
             # Specify the forcefield
             # Initialize a SystemGenerator using the Sage.2.1 for the ligand and tip3p for the water.
@@ -346,10 +280,9 @@ class Whatcat_md_runner():
                 lig_top = ligand.to_topology()
                 modeller.add(lig_top.to_openmm(), lig_top.get_positions().to_openmm())
 
-            #if no analysis requested add all ligands
-            if len(self.analysis_resnames) == 0:
-                for ligand_name in lig_resnames:
-                    self.analysis_resnames.append(f"resname {ligand_name}")
+            #save all ligands for analysis
+            for ligand_name in lig_resnames:
+                self.analysis_resnames.append(f"resname {ligand_name}")
             
         #if not simulating with ligand
         elif self.ligand_files == None:
@@ -523,6 +456,7 @@ class Whatcat_md_runner():
     def create_analysis(self):
         """
         Creates a Whatcat_md_analysis object based on the simulation and returns it
+        Exports pdb_name, simulation.topology, trajectory filename, reporting time and simulation time to analyzer
         """
 
         md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory.dcd", self.reporting_time, self.simulation_time_ns)
@@ -598,7 +532,6 @@ class Whatcat_md_analysis:
         #header=None prevents using the first row as headers avoiding "#"steps" as a name
         #nrows = None allows us to read the whole csv not just the first 100 rows
         self.time_df = pd.read_csv(f"{self.basename}_md_log.txt", names=column_names, comment="#", header=None, nrows=None)  
-        #TODO put df in a whatcat.analysis class
 
         # Extract Trajectory Time
         times = np.array([ts.time for ts in u.trajectory])  # Extract time (in ps)
@@ -673,8 +606,9 @@ class Whatcat_md_analysis:
             traj_file : str
                 Path to the trajectory file.
             atom_pairs : np.ndarray or list of str
-                Array/list of strings specifying atom pairs in the format:
+                Array/list of strings specifying atom pairs (MDAnalysis selection language) in the format:
                 "selection1, selection2"
+                eg "resid 131 and name OG1, resname UNK and name N1x"
         
         Returns
             np.ndarray
@@ -684,7 +618,7 @@ class Whatcat_md_analysis:
         """
 
         #if empty input
-        if len(analysis_distances):
+        if len(analysis_distances) == 0:
             return None
         
         #compute distances
@@ -1068,7 +1002,57 @@ if __name__ == "__main__":
 
     #TODO create a wrapper function of this that presents the user with a equillibrated simulation
     #right away
-    whatcat_md = Whatcat_md_runner.init_from_parse_args()
+
+    #Start the command line parser
+    parser = argparse.ArgumentParser(
+                        prog='POS MD script',
+                        description=(
+                        "This script sets up a OPENMM  simulation of a protein (amber ff14)," 
+                        "any small molecules/cofactors (Sage 2.2.1) as well as water/ions using a 12-6 model (amber ff14/tip3pfb).\n"),
+                        epilog="Use with care and acknowledge Erik Sundén and the Per-Olof Syrén group at KTH Sweden")
+
+    parser.add_argument("pdb", type = str, help = "PDB structure of the structure you want to simulate. \nWARNING PDB may not contain any ligands. These must be provided from sdf files") 
+    parser.add_argument("-l", "--lig", type = str, action="append", default = None, help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
+                                                                        "Convenientlly produced by drawing in chemdraw and exporting as SDF then docking with added hydrogens."
+                                                                        "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep."
+                                                                        "WARNING charges MUST be assigned in the sdf file, use -cc True to autoassign based on pH"
+                                                                        "or whatcat/md/molecule_inspector.ipynb which both converts files and visuallizes result")) 
+    parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from restart xml files if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
+    parser.add_argument("--platform", type = str, default= "CUDA", choices=["CUDA", "OPENCL", "CPU"], help="Sets the simulation platform, default = CUDA", required=False)
+
+    parser.add_argument("--pdbfixer", type = int, default = 2, help = ("0, 1, 2 depending on if your structure shall be PDBfixed." 
+                                                                        "default = 2 removes and readds hydrogens as well as tries to find missing atoms"
+                                                                        "good if you have a SEQRES and unresolved loops as well as unhandled disulfide bonds."
+                                                                        "=1 fixes loops and so on but retains hydrogens in structure. Good if manual protonation was done"
+                                                                        "=0 does not fix your pdb, make sure it is good" ))
+    parser.add_argument("-cc", "--charge_correct", type = str, default= "False", choices=["true", "True", "false", "False"], help="Whether to charge correct ligands or not. also converts files to sdf if ligand not sdf")
+    parser.add_argument("--solvate", type = int, default= 2, choices=[0,1,2], help="IRegulates solvation. \ndefault = 2 - remove all water and add a solvent box \n 1 = add solvent box \n do not alter solvent", required=False)
+    parser.add_argument("-ph", "--ph", type = float, default= 7.4, help="Sets pH for the simulation using PDBfixer and if using -cc openbabel")
+
+    parser.add_argument("-t", "--timeprod", type = float, default= 1, help="Production simulation time in ns. Accepts floats and ints")
+    parser.add_argument("-rt", "--report_time", type = float, default= 10, help="Reporting frequency in ps")
+    parser.add_argument("-eqt", "--equillibration_time", type = float, default= 50, help="Equillibration time in ps, do not set lower than 50 ps. \nUsed for both NPT and NVT equillibration")
+    parser.add_argument("-dt", "--timestep", type = int, default= 4, choices=[1,2,3,4,5], help="Simulation timestep in fs. Accepts ints")
+    
+    parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
+                                                                                "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
+    parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
+    a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
+    
+    parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    #print command line
+    print(f"Parsed arguments: {vars(args)}\n")
+    print(parser.description)
+    print(parser.epilog + "\n")
+
+    whatcat_md = Whatcat_md_runner(args.pdb, args.lig, utils.str_to_bool(args.restart), args.platform, args.pdbfixer, 
+                                   utils.str_to_bool(args.charge_correct), args.solvate, args.ph, args.timeprod, 
+                                   args.timestep, args.report_time, args.equillibration_time, args.debug)
+
     if whatcat_md.restart is not True:
         whatcat_md.fix_pdb()
         whatcat_md.create_openmm_system()
@@ -1079,8 +1063,13 @@ if __name__ == "__main__":
 
     simulation = whatcat_md.run_prod_simulation()
 
-    analysis_resnames = whatcat_md.analysis_resnames
-    analysis_distances = whatcat_md.analysis_distances
+    #set default for analysis
+    analysis_distances = args.dist
+    analysis_resnames = utils.prepend_list(args.resname, "resname ")
+
+    #if data is availible set that
+    if len(args.resname) == 0:
+        analysis_resnames = whatcat_md.analysis_resnames
 
     analysis_resnames += ["backbone"]
 
@@ -1098,7 +1087,7 @@ if __name__ == "__main__":
     whatcat_analysis.calc_pairwise_distances(analysis_distances)
 
     whatcat_analysis.write_sparse_traj()
-    whatcat_analysis.calc_2d_rmsd()
+    whatcat_analysis.calc_2d_rmsd(analysis_resnames)
     whatcat_analysis.remove_sparse_traj()
 
     whatcat_analysis.save_df_to_csv()

@@ -23,6 +23,26 @@ def str_to_bool(string):
     else:
         raise ValueError("Bad input to a boolean field")
 
+def prepend_list(list, prefix):
+    """
+    Adds a prefix to each element in a list of strings
+    """
+
+    for i in range(len(list)):
+        list[i] = prefix + list[i]
+
+    return list
+
+def strip_str_from_list(list, remove_str):
+    """
+    strips the string from all elements in a list of strings if present
+    """
+
+    for i in range(len(list)):
+        list[i] = list[i].replace(remove_str, "")
+
+    return list
+
 
 ###############
 #molecule utils
