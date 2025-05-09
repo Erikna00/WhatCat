@@ -5,7 +5,7 @@ Modules
 
 
     ########
-    MD 
+    MD - Erik
     ########
 
     #Immediate
@@ -23,3 +23,26 @@ Modules
     #TODO add the ability to run sequential replicates of the same simulation via argparse
     #TODO add something to restart such that reporting_time is preserved when restarting
     #TODO Maybe fix so we restart from _final
+
+
+    ######
+    Miner - Erik
+    ######
+
+    #TODO work on data collection and packaging for single frames as well as whole trajectories
+
+
+    ######
+    Mutation script - Victor
+    ######
+
+    Take a PDB file path and mutate it using PLACER --mutate to a new strucutre
+    I don´t think we have to do any validation or something here as we can outsource the flagging of
+    destabilizing mutations to a optimize module calling LigandMPNN later down the line
+    
+    ##########
+    Docking - Victor
+    ##########
+    
+    Placer + AAScore or something i don´t know
+
