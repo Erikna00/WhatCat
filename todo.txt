@@ -1,0 +1,25 @@
+#######
+Modules
+#######
+
+
+
+    ########
+    MD 
+    ########
+
+    #Immediate
+    #TODO fix so that analysis has a self.u
+    #TODO make make sure all plots start from 0
+    #TODO strip prefixes before adding to plot legend using utils.strip_str_from_list
+
+    #Medium term
+    #TODO Fix RMSF parallelization bug
+    #TODO Fix so that analysis resnames and dist are read from file when restarting (combine with dumping reporting time)
+    #TODO add electrostatic field analysis via own code or https://github.com/bunzela/FieldTools
+
+    #Long term
+    #TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
+    #TODO add the ability to run sequential replicates of the same simulation via argparse
+    #TODO add something to restart such that reporting_time is preserved when restarting
+    #TODO Maybe fix so we restart from _final
