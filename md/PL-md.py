@@ -39,7 +39,7 @@ class Whatcat_md_runner():
         A Whatcat_md object can also be created via init_from_parse_args()
 
         pdb_file - path to pdbfile, must not contain any small molecules
-        ligand - path to ligand file, must be sdf if charge_correct = False, charge_correct converts with openbabel
+        ligand - list of paths to ligand file, must be sdf if charge_correct = False, charge_correct converts each ligand with openbabel
         restart - bool for if to restart from _restart.xml files printed by a previous run. Also appends to existing reporter path
                 If restart is set most other parameters will go unused as the class will jump straight to simulation creation
 
@@ -65,7 +65,7 @@ class Whatcat_md_runner():
         
         #Extract into self.varibles
         self.pdb_file = pdb_file
-        self.ligand_files = list(ligand_files)
+        self.ligand_files = ligand_files
         self.restart = restart
         self.platform = platform
 
@@ -194,7 +194,7 @@ class Whatcat_md_runner():
         forcefield_kwargs = {'constraints': HBonds, 'rigidWater': True, 'removeCMMotion': True, 'hydrogenMass' : 1.5 * amu }
 
         #if simulating with ligand
-        if self.ligand_files is not None:
+        if len(self.ligand_files) > 0:
             cache_file = f"{self.script_dir}/ligands.json"
             unnamed_ligands = 0
             ligand_mol = []
@@ -270,14 +270,14 @@ class Whatcat_md_runner():
                 self.analysis_resnames.append(f"resname {ligand_name}")
             
         #if not simulating with ligand
-        elif self.ligand_files == None:
+        elif len(self.ligand_files) == 0:
             # Specify the forcefield
             # Initialize a SystemGenerator using the Sage.2.1 for the ligand and tip3p for the water.
             
             system_generator = SystemGenerator(
                 forcefields=['amber14-all.xml', 'amber14/tip3pfb.xml'],
                 small_molecule_forcefield='openff-2.2.1.offxml',
-                forcefield_kwargs=forcefield_kwargs, cache=cache_file)
+                forcefield_kwargs=forcefield_kwargs)
             
             #start a modeller
             modeller = Modeller(pdb.topology, pdb.positions)
@@ -973,7 +973,7 @@ class Whatcat_md_analysis:
         regr_volume = scipy.stats.linregress(step, volume)
         regr_temp = scipy.stats.linregress(step, temperature)
 
-        if regr_energy.rvalue < r2cutoff and regr_volume < r2cutoff and regr_temp < r2cutoff:
+        if regr_energy.rvalue ** 2 < r2cutoff and regr_volume.rvalue ** 2 < r2cutoff and regr_temp.rvalue ** 2 < r2cutoff:
             print(f"\nR^2 for first 100 ps is good.\nenergy: {regr_energy.rvalue ** 2} \nvolume: {regr_volume.rvalue ** 2} \ntemp: {regr_temp.rvalue ** 2}\n")
         else:
             print(f"\nSIMULATION LIKELLY NOT EQUILLIBRATED.\nenergy: {regr_energy.rvalue ** 2} \nvolume: {regr_volume.rvalue ** 2} \ntemp: {regr_temp.rvalue ** 2}\n")
@@ -990,7 +990,7 @@ class Whatcat_md_analysis:
                 eg ["resname LIG"]
 
         Returns:
-            Good question
+            tuple : list of dictonary keys, dictionary of interaction dataframes
         """
 
         print("Computing interaction fingerprints")
@@ -1027,36 +1027,30 @@ class Whatcat_md_analysis:
             old_ticks = ax.get_xticks()                # returns list
             ps_per_frame = self.reporting_time * sparsity
             new_ticks = old_ticks * ps_per_frame
-            print(f"\nnew_ticks {new_ticks}")
-            print(f"ps_frame {ps_per_frame}")
 
             #check if ns or ps
             if max(new_ticks) > 1000:
-                # place ticks at new positions
-                ax.set_xticks(new_ticks/1000)
+                new_ticks = new_ticks / 1000
 
-                for rect in ax.patches:
-                    rect.set_x(rect.get_x() * ps_per_frame/1000)
-
-                #modify x axis to be in time instead of frames
+                #dont modify the data but relabel the X-axis and its tick marks
+                ax.set_xticklabels([f"{t:.1f}" for t in new_ticks])
                 ax.set_xlabel("Time (ns)")
 
             else: 
-                # place ticks at new positions
-                ax.set_xticks(new_ticks)
-
-                for rect in ax.patches:
-                    rect.set_x(rect.get_x() * ps_per_frame)
-
-                #modify x axis to be in time instead of frames
+                #dont modify the data but relabel the X-axis and its tick marks
+                ax.set_xticklabels([f"{t:.1f}" for t in new_ticks])
                 ax.set_xlabel("Time (ps)")
 
             # Save to PNG
             ax.figure.savefig(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_prolif_barcode.png", dpi=300, bbox_inches="tight")
+            interaction_df = fp.to_dataframe()
+            interaction_df.to_csv(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_interaction_df.csv", index=False)
 
-            interaction_df_dict[ligand_selector_string] = fp.to_dataframe()
+            interaction_df_dict[ligand_selector_string] = interaction_df
         
         print(f"{round(time.time() - start_time,2)}s used for interaction fingerprints")
+
+        return list(interaction_df_dict.keys()), interaction_df_dict
     
     def save_df_to_csv(self):
         """
@@ -1087,7 +1081,7 @@ if __name__ == "__main__":
                         epilog="Use with care and acknowledge Erik Sundén and the Per-Olof Syrén group at KTH Sweden")
 
     parser.add_argument("pdb", type = str, help = "PDB structure of the structure you want to simulate. \nWARNING PDB may not contain any ligands. These must be provided from sdf files") 
-    parser.add_argument("-l", "--lig", type = str, action="append", default = None, help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
+    parser.add_argument("-l", "--lig", type = str, action="append", default = [], help = ("optional parameter, SDF file containing all nonstandard ligands and cofactors." 
                                                                         "Convenientlly produced by drawing in chemdraw and exporting as SDF then docking with added hydrogens."
                                                                         "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep."
                                                                         "WARNING charges MUST be assigned in the sdf file, use -cc True to autoassign based on pH"
