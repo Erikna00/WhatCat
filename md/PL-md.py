@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import MDAnalysis as mda
 import mdtraj as mdtraj
+import prolif
 import scipy
 
 from utils import utils, analysis, plot
@@ -25,22 +26,6 @@ import warnings
 warnings.filterwarnings('ignore')
 #filter biopython warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
-
-#Immediate
-#TODO fix so that analysis has a self.u
-#TODO make make sure all plots start from 0
-#TODO strip prefixes before adding to plot legend using utils.strip_str_from_list
-
-
-#Medium term
-#TODO Fix RMSF parallelization bug
-#TODO Fix so that analysis resnames and dist are read from file when restarting (combine with dumping reporting time)
-
-#Long term
-#TODO improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
-#TODO add the ability to run sequential replicates of the same simulation via argparse
-#TODO add something to restart such that reporting_time is preserved when restarting
-#TODO Maybe fix so we restart from _final
 
 
 class Whatcat_md_runner():
@@ -585,7 +570,9 @@ class Whatcat_md_analysis:
 
         #convert the DCD back to OPENMM compatible format
         #DO NOT CHANGE OR MEDDEL WITH THIS
-        #The issue is complex 
+        #The issue is complex and related to the DCD header
+        #Fixed in OPENMM https://github.com/openmm/openmm/pull/4899
+        #TODO when OPENMM 8.0.3 is released
         if topology_pdb is None:
             topology_pdb = f"{self.basename}_final.pdb"
 
@@ -711,7 +698,7 @@ class Whatcat_md_analysis:
         rmsf_values = np.sqrt(total_squared_flucts / total_frames)
 
         #add rmsf values to self.residue_df
-        self.residue_df = pd.concat([self.residue_df, pd.DataFrame(rmsf_values, columns=["RMSF"])], axis=1)
+        self.residue_df = pd.concat([self.residue_df, pd.DataFrame(rmsf_values, columns=["Ca RMSF"])], axis=1)
         
         # Save RMSF as B-factors in a PDB file.
         u_out = mda.Universe(self.topology, self.traj_file)
@@ -867,7 +854,7 @@ class Whatcat_md_analysis:
         self.sparse_traj = f"{self.basename}_trajectory_sparse.dcd"
         utils.write_trajectory(u, self.sparse_traj, sparsity=sparsity, start_frame=start_frame, end_frame=end_frame)
 
-        print(f"wrote sparse traj from frame {start_frame} to {end_frame} with sparsity {sparsity} for a total of {frames_in_sparse} frames \n")
+        print(f"\nwrote sparse traj from frame {start_frame} to {end_frame} with sparsity {sparsity} for a total of {frames_in_sparse} frames \n")
 
         return self.sparse_traj
     
@@ -878,12 +865,14 @@ class Whatcat_md_analysis:
 
         #remove temp sparse traj
         os.remove(self.sparse_traj)
+        print("removed sparse trajectory from disk")
         
     
     def calc_2d_rmsd(self, selection_list=["backbone"], legend_list = None):
         """ 
         Compute the full 2D RMSD matrix efficiently using process-based parallelism.
-        runs write_sparse_traj() if self.sparse_traj is not set
+        runs write_sparse_traj() if self.sparse_traj is not set and then removes the sparse trajectory.
+        If self.sparse_traj is set this function does not remove the sparse traj.
         
         Parameters:
             selection_list : list of str 
@@ -898,6 +887,7 @@ class Whatcat_md_analysis:
             Tuple of legend_list and rmsd_matrix_dict
             rmsd_matrix_dict : dictionary
                 Dict of legend, np.ndarray pairs: The ndarray is the computed symmetric RMSD matrix for a certain legend
+                The dictionary indexes are the legend list, or if that is not given, the selection list stripped of "resname "
         """
 
         print(f"computing 2D RMSD")
@@ -917,9 +907,10 @@ class Whatcat_md_analysis:
 
         #check that user input was valid
         if legend_list is None:
-            legend_list = selection_list
+            legend_list = utils.strip_str_from_list(selection_list, "resname ")
+
         elif len(selection_list) != len(legend_list):
-            legend_list = selection_list
+            raise ValueError("selection list did not match the legend list in 2D RMSD calculation")
 
         #start the results dict
         rmsd_matrix_dict = {}
@@ -940,10 +931,10 @@ class Whatcat_md_analysis:
                     rmsd_matrix[j, i] = value  # Mirror to lower triangle
 
             #write to file
-            pd.DataFrame(rmsd_matrix).to_csv(f"{self.basename}_2d_rmsd_{selection}.csv")
+            pd.DataFrame(rmsd_matrix).to_csv(f"{self.basename}_2d_rmsd_{legend}.csv")
 
             #add to dict
-            rmsd_matrix_dict["legend"] = rmsd_matrix
+            rmsd_matrix_dict[f"{legend}"] = rmsd_matrix
 
             if self.plot:
                 plot.heatmap(rmsd_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {legend}", f"2d_rmsd_{legend}", self.basename, self.reporting_time, self.sparsity, self.start_frame)
@@ -957,13 +948,15 @@ class Whatcat_md_analysis:
 
         return legend_list, rmsd_matrix_dict
     
-    def equillibration_check(self, dt = 100):
+    def equillibration_check(self, dt = 100, r2cutoff = 0.05):
         """
         Uses a linear regression to find out if the simulation is properlly equillibrated
 
         Parameters:
             dt: int 
                 for how many ps do you want to analyze if the simulation is equillibrated
+            r2cutoff: float
+                The cutoff for when a R^2 value no longer indicates a equillibrated simulation
 
         Returns:
             tuple : R^2 energy, R^2 volume, R^2 temp 
@@ -979,9 +972,91 @@ class Whatcat_md_analysis:
         regr_energy = scipy.stats.linregress(step, potential_energy)
         regr_volume = scipy.stats.linregress(step, volume)
         regr_temp = scipy.stats.linregress(step, temperature)
-        print(f"R^2 for first 100 ps is good.\nenergy: {regr_energy.rvalue ** 2} \nvolume: {regr_volume.rvalue ** 2} \ntemp: {regr_temp.rvalue ** 2}")
+
+        if regr_energy.rvalue < r2cutoff and regr_volume < r2cutoff and regr_temp < r2cutoff:
+            print(f"\nR^2 for first 100 ps is good.\nenergy: {regr_energy.rvalue ** 2} \nvolume: {regr_volume.rvalue ** 2} \ntemp: {regr_temp.rvalue ** 2}\n")
+        else:
+            print(f"\nSIMULATION LIKELLY NOT EQUILLIBRATED.\nenergy: {regr_energy.rvalue ** 2} \nvolume: {regr_volume.rvalue ** 2} \ntemp: {regr_temp.rvalue ** 2}\n")
         
         return regr_energy.rvalue ** 2, regr_volume.rvalue ** 2, regr_temp.rvalue ** 2
+    
+    def run_prolif(self, analysis_resnames, analyze_water = False, start = 0, stop = -1, sparsity = 1):
+        """
+        Uses prolif and MDAnalysis to generate a interaction fingerprint and barcode
+
+        Parameters:
+            analysis_resnames: list
+                list of selection strings for interaction analysis
+                eg ["resname LIG"]
+
+        Returns:
+            Good question
+        """
+
+        print("Computing interaction fingerprints")
+        start_time = time.time()
+
+        # load topology and trajectory
+        u = mda.Universe(self.topology, self.traj_file)
+
+        #create a dictionary of dataframes to store the interactions
+        interaction_df_dict = {}
+        
+        for ligand_selector_string in analysis_resnames:
+            #select the ligand
+            ligand_selection = u.select_atoms(ligand_selector_string)
+
+             # create selections for the protein (and water)
+            if analyze_water:
+                protein_selection = u.select_atoms("(protein or resname WAT) and byres around 20.0 group ligand",
+                ligand=ligand_selection)
+
+            else:
+                protein_selection = u.select_atoms("protein and byres around 20.0 group ligand", ligand=ligand_selection)
+
+            # create a molecule from the MDAnalysis selection
+            ligand_mol = prolif.Molecule.from_mda(ligand_selection)
+
+            # use default interactions
+            fp = prolif.Fingerprint()
+            # run on a slice of the trajectory frames: from start to stop with a step of 10
+            fp.run(u.trajectory[start:stop:sparsity], ligand_selection, protein_selection, n_jobs = self.n_jobs)
+            ax = fp.plot_barcode()
+
+            #Modify the x axis to be in time
+            old_ticks = ax.get_xticks()                # returns list
+            ps_per_frame = self.reporting_time * sparsity
+            new_ticks = old_ticks * ps_per_frame
+            print(f"\nnew_ticks {new_ticks}")
+            print(f"ps_frame {ps_per_frame}")
+
+            #check if ns or ps
+            if max(new_ticks) > 1000:
+                # place ticks at new positions
+                ax.set_xticks(new_ticks/1000)
+
+                for rect in ax.patches:
+                    rect.set_x(rect.get_x() * ps_per_frame/1000)
+
+                #modify x axis to be in time instead of frames
+                ax.set_xlabel("Time (ns)")
+
+            else: 
+                # place ticks at new positions
+                ax.set_xticks(new_ticks)
+
+                for rect in ax.patches:
+                    rect.set_x(rect.get_x() * ps_per_frame)
+
+                #modify x axis to be in time instead of frames
+                ax.set_xlabel("Time (ps)")
+
+            # Save to PNG
+            ax.figure.savefig(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_prolif_barcode.png", dpi=300, bbox_inches="tight")
+
+            interaction_df_dict[ligand_selector_string] = fp.to_dataframe()
+        
+        print(f"{round(time.time() - start_time,2)}s used for interaction fingerprints")
     
     def save_df_to_csv(self):
         """
@@ -1071,8 +1146,6 @@ if __name__ == "__main__":
     if len(args.resname) == 0:
         analysis_resnames = whatcat_md.analysis_resnames
 
-    analysis_resnames += ["backbone"]
-
     whatcat_analysis = whatcat_md.create_analysis()
     whatcat_analysis.read_md_log()
     whatcat_analysis.equillibration_check()
@@ -1081,14 +1154,15 @@ if __name__ == "__main__":
     #Using mdconvert to convert the DCD file to a DCD file restores functionallity
 
     whatcat_analysis.calc_rgyr()
-    whatcat_analysis.calc_1d_rmsd(analysis_resnames)
+    whatcat_analysis.calc_1d_rmsd(analysis_resnames + ["backbone"])
     whatcat_analysis.calc_ca_rmsf()
 
     whatcat_analysis.calc_pairwise_distances(analysis_distances)
 
     whatcat_analysis.write_sparse_traj()
-    whatcat_analysis.calc_2d_rmsd(analysis_resnames)
+    whatcat_analysis.calc_2d_rmsd(analysis_resnames + ["backbone"])
     whatcat_analysis.remove_sparse_traj()
+    whatcat_analysis.run_prolif(analysis_resnames = analysis_resnames)
 
     whatcat_analysis.save_df_to_csv()
 

@@ -37,11 +37,11 @@ def strip_str_from_list(list, remove_str):
     """
     strips the string from all elements in a list of strings if present
     """
-
+    list2 = []
     for i in range(len(list)):
-        list[i] = list[i].replace(remove_str, "")
+        list2.append(list[i].replace(remove_str, ""))
 
-    return list
+    return list2
 
 
 ###############
