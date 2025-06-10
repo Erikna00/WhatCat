@@ -8,11 +8,14 @@ from pdbfixer import PDBFixer
 
 import argparse
 import numpy as np
+import scipy
 import pandas as pd
 import MDAnalysis as mda
 import mdtraj as mdtraj
+
 import prolif
-import scipy
+from rdkit import DataStructs
+
 
 from utils import utils, analysis, plot
 
@@ -403,7 +406,6 @@ class Whatcat_md_runner():
 
         self.simulation = simulation
         self.equillbration_steps = equillibration_steps
-        self.ran_time += 2*equillibration_time *picoseconds
 
         return simulation
 
@@ -421,9 +423,8 @@ class Whatcat_md_runner():
 
         #add reporters
         #print to terminal
-        totalsteps = int(self.ran_time.value_in_unit(picoseconds)) * 1000/self.timestep + production_steps
         simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
-                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= totalsteps, speed=True))
+                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= production_steps, speed=True))
 
         #saved to file
         simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log.txt", reporting_frequency, step=True,
@@ -1052,6 +1053,8 @@ class Whatcat_md_analysis:
 
             # run on a slice of the trajectory frames: from start to stop with a step of sparsity
             fp.run(u.trajectory[start_frame:stop_frame:sparsity], ligand_selection, protein_selection, n_jobs = self.n_jobs)
+
+            #plot the barcode diagram
             ax = fp.plot_barcode()
 
             #Modify the x axis to be in time
@@ -1072,10 +1075,26 @@ class Whatcat_md_analysis:
                 ax.set_xticklabels([f"{t:.1f}" for t in new_ticks])
                 ax.set_xlabel("Time (ps)")
 
-            # Save to PNG
+            # Save barcode to PNG
             ax.figure.savefig(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_prolif_barcode.png", dpi=300, bbox_inches="tight")
             interaction_df = fp.to_dataframe()
             interaction_df.to_csv(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_interaction_df.csv", index=False)
+
+            # Save ligand network plots at different occurrence thresholds
+            for threshold in [0.10, 0.30, 0.50, 0.90]:
+                lignetwork = fp.plot_lignetwork(ligand_mol, threshold=threshold)
+                # fp.plot_lignetwork returns an IPython.display.HTML object, but the HTML content is in lignetwork.data
+                with open(f"{self.basename}_{ligand_selector_string.replace('resname ','')}_lignetwork_{threshold}.html", "w") as f:
+                    f.write(lignetwork.data)
+
+            # Tanimoto similarity matrix
+            bitvectors = fp.to_bitvectors()
+            similarity_matrix = []
+            for bv in bitvectors:
+                similarity_matrix.append(DataStructs.BulkTanimotoSimilarity(bv, bitvectors))
+            similarity_matrix = pd.DataFrame(similarity_matrix, index=interaction_df.index, columns=interaction_df.index)
+            plot.heatmap(similarity_matrix, x_var="Time (ps)", y_var="Time (ps)", heat_var="similarity", titel="Binding pose similarity", plot_type=f"{ligand_selector_string.replace("resname ", "")}_prolif_2d",  basename=self.basename, 
+                               reporting_time =self.reporting_time, sparsity = 1, start_frame = 0)
 
             interaction_df_dict[ligand_selector_string] = interaction_df
         

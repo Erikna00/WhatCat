@@ -52,7 +52,6 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, reporti
 
     if x_var and y_var == "Time (ps)" we do a check to see if we can convert to ns
     """
-    #TODO get even numbers on the axis
     if start_frame == None:
         start_frame = 0
 
@@ -67,8 +66,10 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, reporti
         x_var = "Time (ns)"
         y_var = "Time (ns)"
 
-    plt.imshow(matrix, cmap="viridis")
-    plt.colorbar(orientation="vertical", fraction=0.1, label= heat_var)
+    #make the colorbar a separate subplot to avoid overlapping with the heatmap
+    fig, ax = plt.subplots()
+    cax = ax.imshow(matrix, cmap="viridis")
+    fig.colorbar(cax, ax=ax, orientation="vertical", fraction=0.046, pad=0.04, label=heat_var)
 
     # Set ticks and scaled labels
     plt.xticks(ticks, tick_labels)
