@@ -378,6 +378,7 @@ class Whatcat_md_runner():
         reporting_frequency = int(self.reporting_time / (self.timestep * 10**-3))
         simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log_equil.txt", reporting_frequency, step=True,
         potentialEnergy=True, temperature=True, volume=True, append = self.restart))
+        simulation.reporters.append(DCDReporter(f"{self.pdb_name}_trajectory_equil.dcd", reporting_frequency, append = self.restart))
 
         print("Running NVT equillibration")
         simulation.step(equillibration_steps)
