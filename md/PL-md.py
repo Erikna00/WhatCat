@@ -361,7 +361,8 @@ class Whatcat_md_runner():
     def equillibrate_simulation(self, simulation = None, equillibration_time=None):
         """
         Takes a openmm simulation object and equillibrates it for the provided time converting it
-        to a NPT simulation in the process
+        to a NPT simulation in the process.
+        Prints equillibration step log to md_log_equil.txt
         """
 
         #TODO maybe separate NVT and NPT equillibration time?
@@ -372,6 +373,11 @@ class Whatcat_md_runner():
 
         print("Minimizing energy")
         simulation.minimizeEnergy()
+
+        #add equillibration reporter
+        reporting_frequency = int(self.reporting_time / (self.timestep * 10**-3))
+        simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log_equil.txt", reporting_frequency, step=True,
+        potentialEnergy=True, temperature=True, volume=True, append = self.restart))
 
         print("Running NVT equillibration")
         simulation.step(equillibration_steps)
@@ -386,6 +392,13 @@ class Whatcat_md_runner():
         state = simulation.context.getState(getPositions=True)
         with open(self.pdb_name + "_equillibrated.pdb", "w") as file:
             PDBFile.writeFile(simulation.topology, state.getPositions(), file)
+
+        #reset simulation time to 0 for decent analysis
+        simulation.currentStep = 0  # Reset step counter
+        simulation.context.setTime(0 * picoseconds)  # Reset simulation time to 0 ps
+
+        #remove equillibration reporter
+        simulation.reporters.clear()
 
         self.simulation = simulation
         self.equillbration_steps = equillibration_steps
@@ -980,7 +993,7 @@ class Whatcat_md_analysis:
         
         return regr_energy.rvalue ** 2, regr_volume.rvalue ** 2, regr_temp.rvalue ** 2
     
-    def run_prolif(self, analysis_resnames, analyze_water = False, start = 0, stop = -1, sparsity = 1):
+    def run_prolif(self, analysis_resnames, analyze_water = False, start_ps = 0, stop_ps = -1, sparsity = 1):
         """
         Uses prolif and MDAnalysis to generate a interaction fingerprint and barcode
 
@@ -988,6 +1001,14 @@ class Whatcat_md_analysis:
             analysis_resnames: list
                 list of selection strings for interaction analysis
                 eg ["resname LIG"]
+            analyze_water: bool
+                Whether to include ligand interactions with water
+            start_ps: int
+                At what point in the traj shall we stat analysis?
+            stop_ps: int
+                At what point in the traj shall we stop analysis? -1 means we run the entire trajectory.
+            sparsity: int
+                How often do we sample the trajectory for snapshots to be analyzed?
 
         Returns:
             tuple : list of dictonary keys, dictionary of interaction dataframes
@@ -1019,14 +1040,23 @@ class Whatcat_md_analysis:
 
             # use default interactions
             fp = prolif.Fingerprint()
-            # run on a slice of the trajectory frames: from start to stop with a step of 10
-            fp.run(u.trajectory[start:stop:sparsity], ligand_selection, protein_selection, n_jobs = self.n_jobs)
+
+            #calculate frame starts and ends
+            start_frame = round(start_ps/self.reporting_time)
+
+            if stop_ps == -1:
+                stop_frame = -1
+            else:
+                stop_frame = round(stop_ps/self.reporting_time)
+
+            # run on a slice of the trajectory frames: from start to stop with a step of sparsity
+            fp.run(u.trajectory[start_frame:stop_frame:sparsity], ligand_selection, protein_selection, n_jobs = self.n_jobs)
             ax = fp.plot_barcode()
 
             #Modify the x axis to be in time
             old_ticks = ax.get_xticks()                # returns list
             ps_per_frame = self.reporting_time * sparsity
-            new_ticks = old_ticks * ps_per_frame
+            new_ticks = (old_ticks + start_frame) * ps_per_frame
 
             #check if ns or ps
             if max(new_ticks) > 1000:
