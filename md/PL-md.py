@@ -1075,10 +1075,17 @@ class Whatcat_md_analysis:
                 ax.set_xticklabels([f"{t:.1f}" for t in new_ticks])
                 ax.set_xlabel("Time (ps)")
 
+            # Add a title to the barcode plot
+            ax.set_title(f"Interaction barcode for {ligand_selector_string.replace('resname ','')}")
             # Save barcode to PNG
-            ax.figure.savefig(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_prolif_barcode.png", dpi=300, bbox_inches="tight")
+            ax.figure.savefig(f"{self.basename}_{ligand_selector_string.replace('resname ','')}_prolif_barcode.png", dpi=300, bbox_inches="tight")
+            #make prolif df
             interaction_df = fp.to_dataframe()
-            interaction_df.to_csv(f"{self.basename}_{ligand_selector_string.replace("resname ","")}_interaction_df.csv", index=False)
+
+            # Insert Time (ps) as the first column in the DataFrame
+            frame_times = [ts.time for ts in u.trajectory[start_frame:stop_frame:sparsity]]  # returns a list of times (usually in picoseconds)
+            interaction_df.insert(0, "Time (ps)", frame_times)
+            interaction_df.to_csv(f"{self.basename}_{ligand_selector_string.replace('resname ','')}_prolif_df.csv", index=False)
 
             # Save ligand network plots at different occurrence thresholds
             for threshold in [0.10, 0.30, 0.50, 0.90]:
@@ -1093,7 +1100,7 @@ class Whatcat_md_analysis:
             for bv in bitvectors:
                 similarity_matrix.append(DataStructs.BulkTanimotoSimilarity(bv, bitvectors))
             similarity_matrix = pd.DataFrame(similarity_matrix, index=interaction_df.index, columns=interaction_df.index)
-            plot.heatmap(similarity_matrix, x_var="Time (ps)", y_var="Time (ps)", heat_var="similarity", titel="Binding pose similarity", plot_type=f"{ligand_selector_string.replace("resname ", "")}_prolif_2d",  basename=self.basename, 
+            plot.heatmap(similarity_matrix, x_var="Time (ps)", y_var="Time (ps)", heat_var="Tanimoto similarity", titel="Binding pose similarity", plot_type=f"{ligand_selector_string.replace("resname ", "")}_prolif_2d",  basename=self.basename, 
                                reporting_time =self.reporting_time, sparsity = 1, start_frame = 0)
 
             interaction_df_dict[ligand_selector_string] = interaction_df
