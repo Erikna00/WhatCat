@@ -26,7 +26,7 @@ def line_plotter_2d(x, y, x_var, y_var, basename, plot_type):
     if isinstance(y, pd.DataFrame):  
         # If multiple y-values are passed as a pd dataframe
         for col in y.columns:
-            plt.plot(x, y[col], label=col)  # Plot each column separately
+            plt.plot(x, y[col], label=col.replace("resname ", ""))  # Plot each column separately
         plt.legend()  # Add a legend with column names
         
     else:
