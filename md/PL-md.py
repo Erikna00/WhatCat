@@ -43,7 +43,7 @@ class Whatcat_md_runner():
 
         pdb_file - path to pdbfile, must not contain any small molecules
         ligand - list of paths to ligand file, must be sdf if charge_correct = False, charge_correct converts each ligand with openbabel
-        restart - bool for if to restart from _restart.xml files printed by a previous run. Also appends to existing reporter path
+        restart - bool for if to restart from _restart.xml files and _final.pdb printed by a previous run. Also appends to existing reporter path
                 If restart is set most other parameters will go unused as the class will jump straight to simulation creation
 
         pdb_fixer - int [0,1,2] for wheter to run the pdbfixer script.
@@ -96,9 +96,8 @@ class Whatcat_md_runner():
 
 
         #Restart overrides settings to allow loading of pdb_final
-        #TODO is this reasonable to do here after code refactoring to class?
         if restart == True:
-            self.pdb_name = self.pdb_name.replace("_restart", "")
+            self.pdb_name = self.pdb_name.replace("_final", "")
 
     def parse_set_default(self, attr_name, value):
         """
@@ -325,21 +324,21 @@ class Whatcat_md_runner():
     def restart_simulation_from_file(self, pdb = None, restart_pdb_file=None): 
         """
         Reads xml restart files and restarts a simulation object from the same.
-        If pdb_file is set, self.pdbfile is overwritten and self.name is set to the restart_pdb_file with _restart removed
-        else self.pdb_name is inspected and _restart is removed if present
+        If pdb_file is set, self.pdbfile is overwritten and self.name is set to the restart_pdb_file with _final removed
+        else self.pdb_name is inspected and _final is removed if present
         """
 
         if restart_pdb_file is not None:
             self.pdb_file = restart_pdb_file
             #remove restart if present
-            self.pdb_name = restart_pdb_file.replace("_restart", "")
+            self.pdb_name = restart_pdb_file.replace("_final", "")
         
-        self.pdb_name = self.pdb_name.replace("_restart", "")
+        self.pdb_name = self.pdb_name.replace("_final", "")
         
         #set file basename of all restart files
         checkpoint_filebase = f"{self.pdb_name}_restart"
 
-        pdb = PDBFile(f"{checkpoint_filebase}.pdb")
+        pdb = PDBFile(f"{self.pdb_name}_final.pdb")
         self.pdb = pdb
 
         #Read in XML:d data
@@ -437,8 +436,6 @@ class Whatcat_md_runner():
         #save pdb
         state = simulation.context.getState(getPositions=True)
         with open(f"{self.pdb_name}_final.pdb", "w") as file:
-            PDBFile.writeFile(simulation.topology, state.getPositions(), file)
-        with open(f"{self.pdb_name}_restart.pdb", "w") as file:
             PDBFile.writeFile(simulation.topology, state.getPositions(), file)
         
         #save checkpoints of state, system and integrator
