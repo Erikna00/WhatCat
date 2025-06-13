@@ -90,6 +90,9 @@ class Whatcat_md_runner():
         self.pdb_name = os.path.splitext(pdb_file)[0]
         self.ran_time = 0 *picoseconds
 
+        self.temperature = 300 * kelvin
+        self.pressure = 1 * bar
+
         try:
             self.script_dir = os.path.dirname(os.path.abspath(__file__))
         except:
@@ -386,7 +389,7 @@ class Whatcat_md_runner():
         print("Running NVT equillibration")
         simulation.step(equillibration_steps)
 
-        self.system.addForce(openmm.MonteCarloBarostat(1 * bar, 300 * kelvin))
+        self.system.addForce(openmm.MonteCarloBarostat(self.pressure, self.temperature))
         simulation.context.reinitialize(preserveState=True) #needed to add in the barostat
 
         print("Running NPT equillibration")
@@ -466,29 +469,73 @@ class Whatcat_md_runner():
         grid_max = [max_value]
         grid_bins = [grid_width]
 
+        # Wrap cv_force in a BiasVariable object
+        bias_variable = BiasVariable(cv_force, min_value, max_value)
+
         # Create the Metadynamics object
         meta = Metadynamics(
             system=self.simulation.system,
-            collectiveVariables=[cv_force],
-            temperature=300*kelvin,
+            variables=[bias_variable],
+            temperature=self.temperature,
             biasFactor=bias_factor,
-            height=hill_height*kilojoule_per_mole,
+            height=hill_height * kilojoule_per_mole,
             frequency=hill_frequency,
-            biasDir=None,
-            saveFrequency=0,
-            gridMin=grid_min,
-            gridMax=grid_max,
-            gridWidth=[hill_width],
-            gridBins=grid_bins,
-            wellTempered=True
+            saveFrequency= 1 * hill_frequency,
+            biasDir=None, #TODO
         )
 
-        self.metadynamics = meta
         return meta, cv_force
+
+    def run_metadynamics_simulation(self, metadynamics = None, simulation_time_ns=None, reporting_time = None):
+        """
+        Runs the production metadynamics simulation for the set amount of time.
+        Parameters
+            simulation : openmm.app.Metadynamics
+                A openmm.app.Simulation object created by create_openmm_simulation()
+            simulation_time_ns : int
+                The length of the production simulation in ns
+            reporting_time : int
+                How often to report to the terminal and save to file in ps
+        Returns
+            simulation : openmm.app.Simulation
+                The simulation object after running the production simulation.
+
+        """
+        metadynamics = self.parse_set_default("metadynamics", metadynamics)
+        simulation_time_ns = self.parse_set_default("simulation_time_ns", simulation_time_ns)
+        reporting_time = self.parse_set_default("reporting_time", reporting_time)
+
+        #calculate simulation length
+        production_steps = int(simulation_time_ns / (self.timestep * 10**-6))
+        reporting_frequency = int(reporting_time / (self.timestep * 10**-3))
+
+        #add reporters
+        #print to terminal
+        metadynamics.simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
+                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= production_steps, speed=True))
+
+        #saved to file
+        metadynamics.simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log_metadynamics.txt", reporting_frequency, step=True,
+                potentialEnergy=True, temperature=True, volume=True, append = self.restart))
+        metadynamics.simulation.reporters.append(DCDReporter(f"{self.pdb_name}_trajectory_metadynamics.dcd", reporting_frequency, append = self.restart))
+
+        print("Running metadynamics")
+        metadynamics.step(metadynamics.simulation, production_steps)
+
 
     def run_prod_simulation(self, simulation = None, simulation_time_ns=None, reporting_time = None):
         """
         Runs the production NPT simulation for the set amount of time.
+        Parameters
+            simulation : openmm.app.Simulation
+                A openmm.app.Simulation object created by create_openmm_simulation()
+            simulation_time_ns : int
+                The length of the production simulation in ns
+            reporting_time : int
+                How often to report to the terminal and save to file in ps
+        Returns
+            simulation : openmm.app.Simulation
+                The simulation object after running the production simulation.
         """
         simulation = self.parse_set_default("simulation", simulation)
         simulation_time_ns = self.parse_set_default("simulation_time_ns", simulation_time_ns)
