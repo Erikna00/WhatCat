@@ -25,6 +25,7 @@ import multiprocessing as mp
 import time
 import re
 import warnings
+from openmm.app.metadynamics import Metadynamics
 # suppress some MDAnalysis warnings when writing PDB files as well as the DCD timestep warning
 warnings.filterwarnings('ignore')
 #filter biopython warnings
@@ -407,6 +408,83 @@ class Whatcat_md_runner():
         self.equillbration_steps = equillibration_steps
 
         return simulation
+    
+    def add_metadynamics(self, atom_indices, min_value=0.0, max_value=2.0, bias_factor=10.0, hill_height=1.0, hill_width=0.1, hill_frequency=500, grid_width=100):
+        """
+        Adds a metadynamics bias to the system using OpenMM's Metadynamics class.
+        Also creates the collective variable (CV) force.
+
+        Parameters:
+            atom_indices: list
+                Atom indices for the CV. For "bond", provide [i, j]. For "angle", provide [i, j, k].
+            min_value: float
+                Minimum value of the CV (in CV units).
+            max_value: float
+                Maximum value of the CV (in CV units).
+            bias_factor: float
+                Bias factor for well-tempered metadynamics.
+            hill_height: float
+                Height of the deposited hills (in kJ/mol).
+            hill_width: float
+                Width (sigma) of the hills (in CV units).
+            hill_frequency: int
+                How often (in steps) to deposit a hill.
+            grid_width: int
+                Number of bins for the bias grid.
+
+        Returns:
+            metadynamics: openmm.app.metadynamics.Metadynamics
+                The metadynamics object (stores bias and can be used for analysis).
+            cv_force: openmm.CustomCVForce
+                The collective variable force object.
+        """
+
+        if not hasattr(self, "simulation"):
+            raise RuntimeError("Simulation must be created before adding metadynamics.")
+
+        # Create the CV force using PBC
+        if len(atom_indices) == 2:
+            # Harmonic bond CV
+            cv = CustomBondForce("r")
+            cv.addBond(int(atom_indices[0]), int(atom_indices[1]), [])
+            cv_force = CustomCVForce("bond")
+            cv_force.addCollectiveVariable("bond", cv)
+        elif len(atom_indices) == 3:
+            # Harmonic angle CV
+            cv = CustomAngleForce("theta")
+            cv.addAngle(int(atom_indices[0]), int(atom_indices[1]), int(atom_indices[2]), [])
+            cv_force = CustomCVForce("angle")
+            cv_force.addCollectiveVariable("angle", cv)
+        else:
+            raise ValueError("cv_type must be 'bond' or 'angle'.")
+
+        # Add the CV force to the system
+        self.simulation.system.addForce(cv_force)
+
+        # Set up the bias variable grid
+        grid_min = [min_value]
+        grid_max = [max_value]
+        grid_bins = [grid_width]
+
+        # Create the Metadynamics object
+        meta = Metadynamics(
+            system=self.simulation.system,
+            collectiveVariables=[cv_force],
+            temperature=300*kelvin,
+            biasFactor=bias_factor,
+            height=hill_height*kilojoule_per_mole,
+            frequency=hill_frequency,
+            biasDir=None,
+            saveFrequency=0,
+            gridMin=grid_min,
+            gridMax=grid_max,
+            gridWidth=[hill_width],
+            gridBins=grid_bins,
+            wellTempered=True
+        )
+
+        self.metadynamics = meta
+        return meta, cv_force
 
     def run_prod_simulation(self, simulation = None, simulation_time_ns=None, reporting_time = None):
         """
