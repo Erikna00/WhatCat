@@ -9,8 +9,7 @@ Modules
     ########
 
     #Immediate
-    #TODO dump a restart file with timestep, reporting time, equillibration time and analysis parameters
-    #TODO fix so we restart from _final
+    #TODO dump a restart file with timestep (correct runtime too), reporting time, equillibration time and analysis parameters
 
     #Medium term
     #TODO figure out what automatic sparsity should be for prolif runs
