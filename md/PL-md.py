@@ -89,7 +89,6 @@ class Whatcat_md_runner():
         self.debug = debug
 
         self.pdb_name = os.path.splitext(pdb_file)[0]
-        self.ran_time = 0 *picoseconds
 
         self.temperature = 300 * kelvin
         self.pressure = 1 * bar
@@ -361,7 +360,6 @@ class Whatcat_md_runner():
         print(f"\nSimulation restarted with stepsize of {self.timestep} fs")
 
         self.simulation = simulation
-        self.ran_time = simulation.context.getState().getTime()
 
         return simulation
     
@@ -556,11 +554,12 @@ class Whatcat_md_runner():
         #calculate simulation length
         production_steps = int(simulation_time_ns / (self.timestep * 10**-6))
         reporting_frequency = int(reporting_time / (self.timestep * 10**-3))
+        steps_at_finish = production_steps + self.simulation.context.getStepCount()
 
         #add reporters
         #print to terminal
         simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
-                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= production_steps, speed=True))
+                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= steps_at_finish, speed=True))
 
         #saved to file
         simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log.txt", reporting_frequency, step=True,
