@@ -84,6 +84,7 @@ class Whatcat_md_runner():
         self.equillibration_time = equillibration_time #ps
         
         self.analysis_resnames = []
+        self.meta = False
 
         self.debug = debug
 
@@ -412,7 +413,7 @@ class Whatcat_md_runner():
 
         return simulation
     
-    def add_metadynamics(self, atom_indices, min_value=0.0, max_value=2.0, bias_factor=10.0, hill_height=1.0, hill_width=0.1, hill_frequency=500, grid_width=100):
+    def add_metadynamics(self, atom_indices, min_value=0.0, max_value=2.0, bias_factor=10.0, hill_height=1.0, hill_width=0.5 * angstrom, hill_frequency=500, grid_width=100):
         """
         Adds a metadynamics bias to the system using OpenMM's Metadynamics class.
         Also creates the collective variable (CV) force.
@@ -462,18 +463,13 @@ class Whatcat_md_runner():
             raise ValueError("cv_type must be 'bond' or 'angle'.")
 
         # Add the CV force to the system
-        self.simulation.system.addForce(cv_force)
-
-        # Set up the bias variable grid
-        grid_min = [min_value]
-        grid_max = [max_value]
-        grid_bins = [grid_width]
+        #self.simulation.system.addForce(cv_force)
 
         # Wrap cv_force in a BiasVariable object
-        bias_variable = BiasVariable(cv_force, min_value, max_value)
+        bias_variable = BiasVariable(cv_force, min_value, max_value, hill_width)
 
         # Create the Metadynamics object
-        meta = Metadynamics(
+        metadynamics = Metadynamics(
             system=self.simulation.system,
             variables=[bias_variable],
             temperature=self.temperature,
@@ -481,10 +477,16 @@ class Whatcat_md_runner():
             height=hill_height * kilojoule_per_mole,
             frequency=hill_frequency,
             saveFrequency= 1 * hill_frequency,
-            biasDir=None, #TODO
+            biasDir= os.getcwd() #take biases from CLI position
         )
 
-        return meta, cv_force
+        #reinitiallize simulation to add in the metadynamcis
+        self.simulation.context.reinitialize(preserveState=True)
+
+        self.meta = True
+        self.metadynamics = metadynamics
+
+        return metadynamics, cv_force
 
     def run_metadynamics_simulation(self, metadynamics = None, simulation_time_ns=None, reporting_time = None):
         """
@@ -508,20 +510,30 @@ class Whatcat_md_runner():
         #calculate simulation length
         production_steps = int(simulation_time_ns / (self.timestep * 10**-6))
         reporting_frequency = int(reporting_time / (self.timestep * 10**-3))
+        steps_at_finish = production_steps + self.simulation.context.getStepCount()
 
         #add reporters
         #print to terminal
-        metadynamics.simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
-                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= production_steps, speed=True))
+        self.simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
+                potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= steps_at_finish, speed=True))
 
         #saved to file
-        metadynamics.simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log_metadynamics.txt", reporting_frequency, step=True,
-                potentialEnergy=True, temperature=True, volume=True, append = self.restart))
-        metadynamics.simulation.reporters.append(DCDReporter(f"{self.pdb_name}_trajectory_metadynamics.dcd", reporting_frequency, append = self.restart))
+        # Check if output files already exist and revise append accordinglly
+        traj_file = f"{self.pdb_name}_trajectory_metadynamics.dcd"
+        log_file = f"{self.pdb_name}_md_log_metadynamics.txt"
+
+        self.simulation.reporters.append(StateDataReporter(log_file, reporting_frequency, step=True,
+            potentialEnergy=True, temperature=True, volume=True, append = os.path.exists(log_file)))
+        self.simulation.reporters.append(DCDReporter(traj_file, reporting_frequency, append = os.path.exists(traj_file)))
 
         print("Running metadynamics")
-        metadynamics.step(metadynamics.simulation, production_steps)
+        metadynamics.step(self.simulation, production_steps)
 
+        pes = metadynamics.getFreeEnergy()
+
+        print(pes)
+
+        return pes
 
     def run_prod_simulation(self, simulation = None, simulation_time_ns=None, reporting_time = None):
         """
@@ -581,14 +593,17 @@ class Whatcat_md_runner():
         Exports pdb_name, simulation.topology, trajectory filename, reporting time and simulation time to analyzer
         """
 
-        md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory.dcd", self.reporting_time, self.simulation_time_ns)
+        if self.meta:
+            md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory_metadynamics.dcd", self.reporting_time, metadynamics=True)
+        else:
+            md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory.dcd", self.reporting_time, metadynamics=False)
 
         return md_analysis
 
 
 class Whatcat_md_analysis:
     
-    def __init__(self, basename, topology, traj_file, reporting_time, simulation_time_ns, align = True, plot = True, start_time=0):
+    def __init__(self, basename, topology, traj_file, reporting_time, metadynamics = False,  align = True, plot = True, start_time=0):
         """
         This class analyzes MD simulations by wrapping MDAnalysis in a parallelized executor using
         divide and conquer methodologies when the MDAnalysis function does not have native parallelization
@@ -616,7 +631,7 @@ class Whatcat_md_analysis:
         self.plot = plot
 
         self.reporting_time = reporting_time
-        self.simulation_time_ns = simulation_time_ns
+        self.metadynamics = metadynamics
         
         self.sparse_traj = None
 
@@ -642,7 +657,10 @@ class Whatcat_md_analysis:
             also adds columns to self.time_df
         """
         if md_log is None:
-            md_log = f"{self.basename}_md_log.txt"
+            if self.metadynamics:
+                md_log = f"{self.basename}_SvS_A2_md_log_metadynamics.txt"
+            else:
+                md_log = f"{self.basename}_md_log.txt"
 
         #dt is in ps
         time_offset = 0 #redundant due to centering
@@ -1308,8 +1326,25 @@ if __name__ == "__main__":
         whatcat_md.equillibrate_simulation()
     elif whatcat_md.restart is True:
         whatcat_md.restart_simulation_from_file()
+    
+    meta = True #manual workaround for debugging
 
-    simulation = whatcat_md.run_prod_simulation()
+    if meta == False:
+        simulation = whatcat_md.run_prod_simulation()
+
+    elif meta == True:
+        whatcat_md.add_metadynamics(atom_indices=[5611, 5612], min_value=2 * angstrom, max_value=12 * angstrom, bias_factor=10, hill_height = 1) #C3x C4x
+        pes = whatcat_md.run_metadynamics_simulation()
+        
+        import matplotlib.pyplot as plt
+        x = np.linspace(2, 8, len(pes))
+        plt.figure()
+        plt.plot(x, pes)
+        plt.xlabel("CV value")
+        plt.ylabel("Free Energy (kJ/mol)")
+        plt.title("Metadynamics Free Energy Surface")
+        plt.savefig(f"{whatcat_md.pdb_name}_metadynamics_pes.png", dpi=300, bbox_inches="tight")
+        plt.close()
 
     #set default for analysis
     analysis_distances = args.dist
