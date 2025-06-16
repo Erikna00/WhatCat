@@ -517,12 +517,12 @@ class Whatcat_md_runner():
 
         #saved to file
         # Check if output files already exist and revise append accordinglly
-        traj_file = f"{self.pdb_name}_trajectory_metadynamics.dcd"
-        log_file = f"{self.pdb_name}_md_log_metadynamics.txt"
+        self.traj_file = f"{self.pdb_name}_trajectory_metadynamics.dcd"
+        self.md_log = f"{self.pdb_name}_md_log_metadynamics.txt"
 
-        self.simulation.reporters.append(StateDataReporter(log_file, reporting_frequency, step=True,
-            potentialEnergy=True, temperature=True, volume=True, append = os.path.exists(log_file)))
-        self.simulation.reporters.append(DCDReporter(traj_file, reporting_frequency, append = os.path.exists(traj_file)))
+        self.simulation.reporters.append(StateDataReporter(self.md_log, reporting_frequency, step=True,
+            potentialEnergy=True, temperature=True, volume=True, append = os.path.exists(self.md_log)))
+        self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = os.path.exists(self.traj_file)))
 
         print("Running metadynamics")
         metadynamics.step(self.simulation, production_steps)
@@ -558,13 +558,16 @@ class Whatcat_md_runner():
 
         #add reporters
         #print to terminal
+        self.md_log = f"{self.pdb_name}_md_log.txt"
+        self.traj_file = f"{self.pdb_name}_trajectory.dcd"
+
         simulation.reporters.append(StateDataReporter(sys.stdout, 1000, step=True,
                 potentialEnergy=True, temperature=True, volume=True, remainingTime=True, totalSteps= steps_at_finish, speed=True))
 
         #saved to file
-        simulation.reporters.append(StateDataReporter(f"{self.pdb_name}_md_log.txt", reporting_frequency, step=True,
+        simulation.reporters.append(StateDataReporter(self.md_log, reporting_frequency, step=True,
                 potentialEnergy=True, temperature=True, volume=True, append = self.restart))
-        simulation.reporters.append(DCDReporter(f"{self.pdb_name}_trajectory.dcd", reporting_frequency, append = self.restart))
+        simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = self.restart))
 
         print("Running production NPT")
         simulation.step(production_steps)
@@ -592,17 +595,14 @@ class Whatcat_md_runner():
         Exports pdb_name, simulation.topology, trajectory filename, reporting time and simulation time to analyzer
         """
 
-        if self.meta:
-            md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory_metadynamics.dcd", self.reporting_time, metadynamics=True)
-        else:
-            md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, f"{self.pdb_name}_trajectory.dcd", self.reporting_time, metadynamics=False)
+        md_analysis = Whatcat_md_analysis(self.pdb_name, self.simulation.topology, self.traj_file, self.md_log ,self.reporting_time, metadynamics=self.meta)
 
         return md_analysis
 
 
 class Whatcat_md_analysis:
     
-    def __init__(self, basename, topology, traj_file, reporting_time, metadynamics = False,  align = True, plot = True, start_time=0):
+    def __init__(self, basename, topology, traj_file, md_log, reporting_time, metadynamics = False,  align = True, plot = True, start_time=0):
         """
         This class analyzes MD simulations by wrapping MDAnalysis in a parallelized executor using
         divide and conquer methodologies when the MDAnalysis function does not have native parallelization
@@ -631,6 +631,7 @@ class Whatcat_md_analysis:
 
         self.reporting_time = reporting_time
         self.metadynamics = metadynamics
+        self.md_log = md_log
         
         self.sparse_traj = None
 
@@ -640,7 +641,7 @@ class Whatcat_md_analysis:
         #get how much we can parallelize
         self.n_jobs = mp.cpu_count()
 
-    def read_md_log(self, md_log = None):
+    def read_md_log(self):
         """
         Reads the log file from whatcat_md_runner into self.time_df
 
@@ -655,11 +656,6 @@ class Whatcat_md_analysis:
                 computed distances for the specified pairs in that frame.
             also adds columns to self.time_df
         """
-        if md_log is None:
-            if self.metadynamics:
-                md_log = f"{self.basename}_SvS_A2_md_log_metadynamics.txt"
-            else:
-                md_log = f"{self.basename}_md_log.txt"
 
         #dt is in ps
         time_offset = 0 #redundant due to centering
@@ -670,7 +666,7 @@ class Whatcat_md_analysis:
         
         #header=None prevents using the first row as headers avoiding "#"steps" as a name
         #nrows = None allows us to read the whole csv not just the first 100 rows
-        self.time_df = pd.read_csv(f"{self.basename}_md_log.txt", names=column_names, comment="#", header=None, nrows=None)  
+        self.time_df = pd.read_csv(self.md_log, names=column_names, comment="#", header=None, nrows=None)  
 
         # Extract Trajectory Time
         times = np.array([ts.time for ts in u.trajectory])  # Extract time (in ps)
@@ -681,7 +677,7 @@ class Whatcat_md_analysis:
         plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Temperature (K)"], "Time (ps)", "Temperature (K)", self.basename, "temperature")
         plot.line_plotter_2d(self.time_df["Time (ps)"], self.time_df["Box Volume (nm^3)"], "Time (ps)", "Box Volume (nm^3)", self.basename, "volume")
 
-    def center_align_traj(self, pdb_ending = "_final.pdb", topology_ending = "_trajectory.dcd", topology_pdb = None):
+    def center_align_traj(self, pdb_ending = "_final.pdb"):
         """
         Centers the protein in the periodic box.
         Optionally aligns the protein to the first frame to remove tumbling
@@ -690,15 +686,6 @@ class Whatcat_md_analysis:
         Parameters
             pdb_ending : str
                 the fileending which should be added to self.basename to write the centered structure to
-            topology_ending : str
-                the fileending which should be added to self.basename to write the centered trajectory to
-                defaults are set to overwrite the files from Whatcat_md_runner.
-                self.traj_file will be set to self.basename + topology_ending
-            
-            topology_pdb : str
-                The filepath to the PDB used as topology when converting the DCD back from using a MDA header to using a OPENMM header.
-                This issue stems from the DCD format not being well defined and this is a hacky solution.
-                If left as None, topology_pdb = f"{self.basename}_final.pdb" to conform with whatcats MD runner
 
         Returns
             Nothing and does not add to df
@@ -709,11 +696,11 @@ class Whatcat_md_analysis:
         start_time = time.time()
 
         #center proteins, This also resets the time of the first snapshot to 0 ps thus removing equillibration time
-        centered_traj_name = f"{self.basename}{topology_ending}"
-        self.traj_file = centered_traj_name
+        #this unintended behavior is no longer utilized since we reset time after equillibration
+        centered_traj_name = self.traj_file
         final_pdb = f"{self.basename}{pdb_ending}"
 
-        mda_traj = utils.parallel_center_trajectory(self.topology, f"{self.basename}_trajectory.dcd", align=self.align, n_jobs=self.n_jobs, output_filename = centered_traj_name) 
+        mda_traj = utils.parallel_center_trajectory(self.topology, self.traj_file, align=self.align, n_jobs=self.n_jobs, output_filename = centered_traj_name) 
 
         #rewrite final PDB after alignment
         mda_traj.trajectory[-1]
@@ -727,10 +714,8 @@ class Whatcat_md_analysis:
         #The issue is complex and related to the DCD header
         #Fixed in OPENMM https://github.com/openmm/openmm/pull/4899
         #TODO when OPENMM 8.0.3 is released
-        if topology_pdb is None:
-            topology_pdb = f"{self.basename}_final.pdb"
 
-        md_traj = mdtraj.load(centered_traj_name, top=final_pdb)    
+        md_traj = mdtraj.load(centered_traj_name, top=final_pdb) #MDtraj cannot ingest a OPENMM system as topology   
         md_traj.save_dcd(centered_traj_name)
 
         print(f"{round(time.time() - start_time,2)}s used for centering")
@@ -1305,7 +1290,7 @@ if __name__ == "__main__":
     a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
     
     parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
-
+    parser.add_argument("-mtd", "--metadynamics", type = str, default= "False", choices=["true", "True", "false", "False"], help="Whether to run metadynamics or not. Default = False. \nIf set to True, the simulation will run with metadynamics")
     # Parse arguments
     args = parser.parse_args()
 
@@ -1326,7 +1311,7 @@ if __name__ == "__main__":
     elif whatcat_md.restart is True:
         whatcat_md.restart_simulation_from_file()
     
-    meta = True #manual workaround for debugging
+    meta = utils.str_to_bool(args.metadynamics)
 
     if meta == False:
         simulation = whatcat_md.run_prod_simulation()
@@ -1357,8 +1342,7 @@ if __name__ == "__main__":
     whatcat_analysis.read_md_log()
     whatcat_analysis.equillibration_check()
 
-    whatcat_analysis.center_align_traj() #this one produces a erroneous DCD file. I suspect the box dimensions are scuffed
-    #Using mdconvert to convert the DCD file to a DCD file restores functionallity
+    whatcat_analysis.center_align_traj() 
 
     whatcat_analysis.calc_rgyr()
     whatcat_analysis.calc_1d_rmsd(analysis_resnames + ["backbone"])
