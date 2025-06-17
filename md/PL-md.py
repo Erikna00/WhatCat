@@ -521,15 +521,16 @@ class Whatcat_md_runner():
         self.md_log = f"{self.pdb_name}_md_log_metadynamics.txt"
 
         self.simulation.reporters.append(StateDataReporter(self.md_log, reporting_frequency, step=True,
-            potentialEnergy=True, temperature=True, volume=True, append = os.path.exists(self.md_log)))
-        self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = os.path.exists(self.traj_file)))
+            potentialEnergy=True, temperature=True, volume=True, append = os.path.exists(self.md_log) and self.restart))
+        self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = os.path.exists(self.traj_file) and self.restart))
 
-        print("Running metadynamics")
+        print("Running production NPT metadynamics")
         metadynamics.step(self.simulation, production_steps)
 
         pes = metadynamics.getFreeEnergy()
+        pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
 
-        print(pes)
+        print(f"Metadynamics potential energy surface\n{pes}")
 
         return pes
 
@@ -1317,11 +1318,11 @@ if __name__ == "__main__":
         simulation = whatcat_md.run_prod_simulation()
 
     elif meta == True:
-        whatcat_md.add_metadynamics(atom_indices=[5611, 5612], min_value=2 * angstrom, max_value=12 * angstrom, bias_factor=10, hill_height = 1) #C3x C4x
+        whatcat_md.add_metadynamics(atom_indices=[5611, 5612], min_value=2 * angstrom, max_value=12 * angstrom, bias_factor=4, hill_height = 1) #C3x C4x
         pes = whatcat_md.run_metadynamics_simulation()
         
         import matplotlib.pyplot as plt
-        x = np.linspace(2, 8, len(pes))
+        x = np.linspace(2, 12, len(pes))
         plt.figure()
         plt.plot(x, pes)
         plt.xlabel("CV value")
