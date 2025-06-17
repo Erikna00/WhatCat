@@ -411,65 +411,72 @@ class Whatcat_md_runner():
 
         return simulation
     
-    def add_metadynamics(self, atom_indices, min_value=0.0, max_value=2.0, bias_factor=10.0, hill_height=1.0, hill_width=0.5 * angstrom, hill_frequency=500, grid_width=100):
+    def add_metadynamics(self, atom_indices, colvar_parameters, bias_factor = 10, hill_height=1.0, hill_frequency=500):
         """
         Adds a metadynamics bias to the system using OpenMM's Metadynamics class.
         Also creates the collective variable (CV) force.
+        #TODO rewrite me
 
         Parameters:
             atom_indices: list
                 Atom indices for the CV. For "bond", provide [i, j]. For "angle", provide [i, j, k].
-            min_value: float
-                Minimum value of the CV (in CV units).
-            max_value: float
-                Maximum value of the CV (in CV units).
+            colvar_parameters: list of lists
+                Parameters for each colvar [[min_value, max_value, hill_width] ...]
             bias_factor: float
                 Bias factor for well-tempered metadynamics.
             hill_height: float
                 Height of the deposited hills (in kJ/mol).
-            hill_width: float
-                Width (sigma) of the hills (in CV units).
             hill_frequency: int
                 How often (in steps) to deposit a hill.
-            grid_width: int
-                Number of bins for the bias grid.
 
         Returns:
             metadynamics: openmm.app.metadynamics.Metadynamics
                 The metadynamics object (stores bias and can be used for analysis).
-            cv_force: openmm.CustomCVForce
-                The collective variable force object.
         """
 
         if not hasattr(self, "simulation"):
             raise RuntimeError("Simulation must be created before adding metadynamics.")
 
-        # Create the CV force using PBC
-        if len(atom_indices) == 2:
-            # Harmonic bond CV
-            cv = CustomBondForce("r")
-            cv.addBond(int(atom_indices[0]), int(atom_indices[1]), [])
-            cv_force = CustomCVForce("bond")
-            cv_force.addCollectiveVariable("bond", cv)
-        elif len(atom_indices) == 3:
-            # Harmonic angle CV
-            cv = CustomAngleForce("theta")
-            cv.addAngle(int(atom_indices[0]), int(atom_indices[1]), int(atom_indices[2]), [])
-            cv_force = CustomCVForce("angle")
-            cv_force.addCollectiveVariable("angle", cv)
-        else:
-            raise ValueError("cv_type must be 'bond' or 'angle'.")
+        bias_variables = []
+        for index in range(0, len(atom_indices)):
+            # Create the CV force using PBC
 
-        # Add the CV force to the system
-        #self.simulation.system.addForce(cv_force)
+            if len(atom_indices[index]) == 2:
+                # Harmonic bond CV
+                cv = CustomBondForce("r")
+                cv.addBond(atom_indices[index], [])
+                cv_force = CustomCVForce("bond")
+                cv_force.addCollectiveVariable("bond", cv)
+                unit = angstrom 
+            
+            elif len(atom_indices[index]) == 3:
+                # Harmonic angle CV
+                cv = CustomAngleForce("theta")
+                cv.addAngle(atom_indices[index], [])
+                cv_force = CustomCVForce("angle")
+                cv_force.addCollectiveVariable("angle", cv)
+                unit = degree
 
-        # Wrap cv_force in a BiasVariable object
-        bias_variable = BiasVariable(cv_force, min_value, max_value, hill_width)
+            elif len(atom_indices[index]) == 4:
+                #Dihedral CV
+                cv = CustomTorsionForce("phi")
+                cv.addTorsion(atom_indices[index], [])
+                cv_force = CustomCVForce("dihedral")
+                cv_force.addCollectiveVariable("dihedral", cv)
+                unit = degree
+
+            else:
+                raise ValueError("cv_type must be 'bond' or 'angle'.")
+
+            # Wrap cv_force in a BiasVariable object
+            bias_variable = BiasVariable(cv_force, colvar_parameters[index][0] * unit, 
+                                         colvar_parameters[index][1] * unit, colvar_parameters[index][2] * unit)
+            bias_variables.append(bias_variable)
 
         # Create the Metadynamics object
         metadynamics = Metadynamics(
             system=self.simulation.system,
-            variables=[bias_variable],
+            variables=bias_variables,
             temperature=self.temperature,
             biasFactor=bias_factor,
             height=hill_height * kilojoule_per_mole,
@@ -484,7 +491,7 @@ class Whatcat_md_runner():
         self.meta = True
         self.metadynamics = metadynamics
 
-        return metadynamics, cv_force
+        return metadynamics
 
     def run_metadynamics_simulation(self, metadynamics = None, simulation_time_ns=None, reporting_time = None):
         """
@@ -1287,11 +1294,19 @@ if __name__ == "__main__":
     
     parser.add_argument("--resname", type = str, action="append", default= [], help="Residue names in PDB for which you want further analysis, eg ligand.\n"
                                                                                 "several --resnames can be used at once \n if not specified all ligands added with --lig will get analyzed", required=False)
-    parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom numbers eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
+    parser.add_argument("--dist", type = str, action="append", default= [], help="""a pair of atom selectors eg "resid 131 and name OG1, resname UNK and name N1x" for which you want 
     a distance plot eg for monitoring near-attack conformations. specify using MDAnalysis/VMD natural language queries""", required=False)
     
     parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
-    parser.add_argument("-mtd", "--metadynamics", type = str, default= "False", choices=["true", "True", "false", "False"], help="Whether to run metadynamics or not. Default = False. \nIf set to True, the simulation will run with metadynamics")
+    
+    parser.add_argument("-mtd_cv", "--metadynamics_cv", type = str, action="append", default= [], help="""a pair (bond), triple (angle) or quartet (dihedral) of atom selectors eg "resid 131 and name OG1, resname UNK and name N1x" 
+                        which you want to use as colvars for metadynamics. specify using MDAnalysis/VMD natural language queries\n Angles and dihedrals are assumed to be periodic, E(-180)=E(180)""", required=False)
+    parser.add_argument("-mtd_p", "--metadynamics_parameters", type = str, action="append", default= [], help="A triple of min/max values as well as bias width. In Ångström and degrees." \
+    """\nFor bonds, 0.5Å is appropriate whereas 20 degrees is good for angles/dihedrals \nFor example "2, 8, 0.5" """, required = False)
+    parser.add_argument("-mtd_bias", "--metadynamics_bias_factor", type = float, default= 4, help="The colvars will be sampled as if they were at temp*bias_factor. Higher = we will sample higher energy transitions", required = False)
+    parser.add_argument("-mtd_height", "--metadynamics_hill_height", type = float, default= 1, help="The size of gaussian bias which will be added to the simulation at each dumpstep, 1 kJ/mol is default", required = False)
+    parser.add_argument("-mtd_bs", "--metadynamics_bias_step", type = int, default= 500, help="How often do we add a gaussian bias to the simulation? 500 steps is default", required = False)
+    
     # Parse arguments
     args = parser.parse_args()
 
@@ -1311,14 +1326,20 @@ if __name__ == "__main__":
         whatcat_md.equillibrate_simulation()
     elif whatcat_md.restart is True:
         whatcat_md.restart_simulation_from_file()
-    
-    meta = utils.str_to_bool(args.metadynamics)
 
-    if meta == False:
+    if len(args.metadynamics_cv) == 0:
         simulation = whatcat_md.run_prod_simulation()
 
-    elif meta == True:
-        whatcat_md.add_metadynamics(atom_indices=[5611, 5612], min_value=2 * angstrom, max_value=12 * angstrom, bias_factor=4, hill_height = 1) #C3x C4x
+    elif len(args.metadynamics_cv) > 0:
+        atom_indicies_list = [[utils.atom_idx_from_selection(selection, whatcat_md.simulation.topology) for selection in utils.css_to_list(cv)] for cv in args.metadynamics_cv]
+
+        #read in the user input for parameters
+        colvar_parameters = []
+        for param in args.metadynamics_parameters:
+            list = utils.css_to_list(param)
+            colvar_parameters.append([float(x) for x in list])
+
+        whatcat_md.add_metadynamics(atom_indices=atom_indicies_list, colvar_parameters=colvar_parameters, bias_factor=4, hill_height = 1) #C3x C4x
         pes = whatcat_md.run_metadynamics_simulation()
         
         import matplotlib.pyplot as plt

@@ -43,6 +43,33 @@ def strip_str_from_list(list, remove_str):
 
     return list2
 
+def css_to_list(string):
+    """
+    Converts a comma separated string to a list of strings
+    """
+
+    list = [s.strip() for s in string.split(',') if s.strip()]
+
+    return list
+
+def atom_idx_from_selection(selection_string, topology):
+    """
+    Converts a selection string to a list of atom indices.
+    
+    Parameters:
+        selection_string : str 
+            A string containing the selection (e.g., "name CA and resid 1").
+        topology : PDB or openmm.simulation.topology
+            The topology of the system, used for building a MDAnalysis universe
+    
+    Returns:
+        list : A list of atom indices corresponding to the selection.
+    """
+
+    u = mda.Universe(topology)
+    selected_atoms = u.select_atoms(selection_string)
+
+    return selected_atoms.indices.tolist()
 
 ###############
 #molecule utils
