@@ -69,7 +69,10 @@ def atom_idx_from_selection(selection_string, topology):
     u = mda.Universe(topology)
     selected_atoms = u.select_atoms(selection_string)
 
-    return selected_atoms.indices.tolist()
+    if len(selected_atoms) != 1:
+        raise ValueError(f"Selection '{selection_string}' did not return exactly one atom. Returned {len(selected_atoms)} atoms.")
+
+    return selected_atoms.indices.tolist()[0]
 
 ###############
 #molecule utils

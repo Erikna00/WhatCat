@@ -444,7 +444,7 @@ class Whatcat_md_runner():
             if len(atom_indices[index]) == 2:
                 # Harmonic bond CV
                 cv = CustomBondForce("r")
-                cv.addBond(atom_indices[index], [])
+                cv.addBond(atom_indices[index][0], atom_indices[index][1], [])
                 cv_force = CustomCVForce("bond")
                 cv_force.addCollectiveVariable("bond", cv)
                 unit = angstrom 
@@ -452,7 +452,7 @@ class Whatcat_md_runner():
             elif len(atom_indices[index]) == 3:
                 # Harmonic angle CV
                 cv = CustomAngleForce("theta")
-                cv.addAngle(atom_indices[index], [])
+                cv.addAngle(atom_indices[index][0], atom_indices[index][1], atom_indices[index][2], [])
                 cv_force = CustomCVForce("angle")
                 cv_force.addCollectiveVariable("angle", cv)
                 unit = degree
@@ -460,7 +460,7 @@ class Whatcat_md_runner():
             elif len(atom_indices[index]) == 4:
                 #Dihedral CV
                 cv = CustomTorsionForce("phi")
-                cv.addTorsion(atom_indices[index], [])
+                cv.addTorsion(atom_indices[index][0], atom_indices[index][1], atom_indices[index][2], atom_indices[index][3], [])
                 cv_force = CustomCVForce("dihedral")
                 cv_force.addCollectiveVariable("dihedral", cv)
                 unit = degree
@@ -1331,13 +1331,14 @@ if __name__ == "__main__":
         simulation = whatcat_md.run_prod_simulation()
 
     elif len(args.metadynamics_cv) > 0:
+        #unpack the list of comma separated selection strings to a list of lists with atom indicies in them
         atom_indicies_list = [[utils.atom_idx_from_selection(selection, whatcat_md.simulation.topology) for selection in utils.css_to_list(cv)] for cv in args.metadynamics_cv]
 
         #read in the user input for parameters
         colvar_parameters = []
         for param in args.metadynamics_parameters:
-            list = utils.css_to_list(param)
-            colvar_parameters.append([float(x) for x in list])
+            parameter_list = utils.css_to_list(param)
+            colvar_parameters.append([float(x) for x in parameter_list])
 
         whatcat_md.add_metadynamics(atom_indices=atom_indicies_list, colvar_parameters=colvar_parameters, bias_factor=4, hill_height = 1) #C3x C4x
         pes = whatcat_md.run_metadynamics_simulation()
