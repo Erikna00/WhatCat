@@ -437,9 +437,14 @@ class Whatcat_md_runner():
         if not hasattr(self, "simulation"):
             raise RuntimeError("Simulation must be created before adding metadynamics.")
 
+        # Create the CV forces
+        # We do it this way since periodic colvars cannot be mixed with non periodic colvars
+        periodic_list =[]
+        cv_forces = []
+        units = []
         bias_variables = []
+
         for index in range(0, len(atom_indices)):
-            # Create the CV force using PBC
 
             if len(atom_indices[index]) == 2:
                 # Harmonic bond CV
@@ -447,7 +452,8 @@ class Whatcat_md_runner():
                 cv.addBond(atom_indices[index][0], atom_indices[index][1], [])
                 cv_force = CustomCVForce("bond")
                 cv_force.addCollectiveVariable("bond", cv)
-                unit = angstrom 
+                units.append(angstrom)
+                periodic_list.append(False)
             
             elif len(atom_indices[index]) == 3:
                 # Harmonic angle CV
@@ -455,22 +461,30 @@ class Whatcat_md_runner():
                 cv.addAngle(atom_indices[index][0], atom_indices[index][1], atom_indices[index][2], [])
                 cv_force = CustomCVForce("angle")
                 cv_force.addCollectiveVariable("angle", cv)
-                unit = degree
+                units.append(degree)
+                periodic_list.append(False)
 
             elif len(atom_indices[index]) == 4:
                 #Dihedral CV
-                cv = CustomTorsionForce("phi")
+                cv = CustomTorsionForce("theta")
                 cv.addTorsion(atom_indices[index][0], atom_indices[index][1], atom_indices[index][2], atom_indices[index][3], [])
                 cv_force = CustomCVForce("dihedral")
                 cv_force.addCollectiveVariable("dihedral", cv)
-                unit = degree
+                units.append(degree)
+                periodic_list.append(True)
 
             else:
                 raise ValueError("cv_type must be 'bond' or 'angle'.")
+            
+            #add cv_force to collection
+            cv_forces.append(cv_force)
 
-            # Wrap cv_force in a BiasVariable object
-            bias_variable = BiasVariable(cv_force, colvar_parameters[index][0] * unit, 
-                                         colvar_parameters[index][1] * unit, colvar_parameters[index][2] * unit)
+        periodic = all(periodic_list)  # Check if all CVs are periodic
+
+        for index in range(0, len(cv_forces)):
+            # Wrap cv_forces in a BiasVariable object
+            bias_variable = BiasVariable(cv_forces[index], colvar_parameters[index][0] * units[index], 
+                                         colvar_parameters[index][1] * units[index], colvar_parameters[index][2] * units[index], periodic=periodic)
             bias_variables.append(bias_variable)
 
         # Create the Metadynamics object
@@ -526,10 +540,12 @@ class Whatcat_md_runner():
         # Check if output files already exist and revise append accordinglly
         self.traj_file = f"{self.pdb_name}_trajectory_metadynamics.dcd"
         self.md_log = f"{self.pdb_name}_md_log_metadynamics.txt"
+        append = os.path.exists(self.md_log) and self.restart and os.path.exists(self.traj_file) and self.restart
+        append = append and os.path.getsize(self.traj_file) > 0 # only append if DCD file is non empty, otherwise we get header errors
 
         self.simulation.reporters.append(StateDataReporter(self.md_log, reporting_frequency, step=True,
-            potentialEnergy=True, temperature=True, volume=True, append = os.path.exists(self.md_log) and self.restart))
-        self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = os.path.exists(self.traj_file) and self.restart))
+            potentialEnergy=True, temperature=True, volume=True, append = append))
+        self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = append))
 
         print("Running production NPT metadynamics")
         metadynamics.step(self.simulation, production_steps)
@@ -537,7 +553,7 @@ class Whatcat_md_runner():
         pes = metadynamics.getFreeEnergy()
         pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
 
-        print(f"Metadynamics potential energy surface\n{pes}")
+        pd.DataFrame(pes).to_csv(f"{self.pdb_name}_metadynamics_pes.csv", index=False)
 
         return pes
 
@@ -1084,7 +1100,7 @@ class Whatcat_md_analysis:
             rmsd_matrix_dict[f"{legend}"] = rmsd_matrix
 
             if self.plot:
-                plot.heatmap(rmsd_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {legend}", f"2d_rmsd_{legend}", self.basename, self.reporting_time, self.sparsity, self.start_frame)
+                plot.time_heatmap(rmsd_matrix, "Time (ps)", "Time (ps)", "RMSD (Å)", f"2D RMSD for {legend}", f"2d_rmsd_{legend}", self.basename, self.reporting_time, self.sparsity, self.start_frame)
 
         #if the user did not start a sparse traj remove the automatically created one
         if delete:
@@ -1232,7 +1248,7 @@ class Whatcat_md_analysis:
             for bv in bitvectors:
                 similarity_matrix.append(DataStructs.BulkTanimotoSimilarity(bv, bitvectors))
             similarity_matrix = pd.DataFrame(similarity_matrix, index=interaction_df.index, columns=interaction_df.index)
-            plot.heatmap(similarity_matrix, x_var="Time (ps)", y_var="Time (ps)", heat_var="Tanimoto similarity", titel="Binding pose similarity", plot_type=f"{ligand_selector_string.replace("resname ", "")}_prolif_2d",  basename=self.basename, 
+            plot.time_heatmap(similarity_matrix, x_var="Time (ps)", y_var="Time (ps)", heat_var="Tanimoto similarity", titel="Binding pose similarity", plot_type=f"{ligand_selector_string.replace("resname ", "")}_prolif_2d",  basename=self.basename, 
                                reporting_time =self.reporting_time, sparsity = 1, start_frame = 0)
 
             interaction_df_dict[ligand_selector_string] = interaction_df
@@ -1300,7 +1316,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
     
     parser.add_argument("-mtd_cv", "--metadynamics_cv", type = str, action="append", default= [], help="""a pair (bond), triple (angle) or quartet (dihedral) of atom selectors eg "resid 131 and name OG1, resname UNK and name N1x" 
-                        which you want to use as colvars for metadynamics. specify using MDAnalysis/VMD natural language queries\n Angles and dihedrals are assumed to be periodic, E(-180)=E(180)""", required=False)
+                        which you want to use as colvars for metadynamics. specify using MDAnalysis/VMD natural language queries\n  Dihedrals are assumed to be periodic, E(-180)=E(180)""", required=False)
     parser.add_argument("-mtd_p", "--metadynamics_parameters", type = str, action="append", default= [], help="A triple of min/max values as well as bias width. In Ångström and degrees." \
     """\nFor bonds, 0.5Å is appropriate whereas 20 degrees is good for angles/dihedrals \nFor example "2, 8, 0.5" """, required = False)
     parser.add_argument("-mtd_bias", "--metadynamics_bias_factor", type = float, default= 4, help="The colvars will be sampled as if they were at temp*bias_factor. Higher = we will sample higher energy transitions", required = False)
@@ -1332,7 +1348,7 @@ if __name__ == "__main__":
 
     elif len(args.metadynamics_cv) > 0:
         #unpack the list of comma separated selection strings to a list of lists with atom indicies in them
-        atom_indicies_list = [[utils.atom_idx_from_selection(selection, whatcat_md.simulation.topology) for selection in utils.css_to_list(cv)] for cv in args.metadynamics_cv]
+        atom_indices_list = [[utils.atom_idx_from_selection(selection, whatcat_md.simulation.topology) for selection in utils.css_to_list(cv)] for cv in args.metadynamics_cv]
 
         #read in the user input for parameters
         colvar_parameters = []
@@ -1340,18 +1356,8 @@ if __name__ == "__main__":
             parameter_list = utils.css_to_list(param)
             colvar_parameters.append([float(x) for x in parameter_list])
 
-        whatcat_md.add_metadynamics(atom_indices=atom_indicies_list, colvar_parameters=colvar_parameters, bias_factor=4, hill_height = 1) #C3x C4x
+        whatcat_md.add_metadynamics(atom_indices=atom_indices_list, colvar_parameters=colvar_parameters, bias_factor=4, hill_height = 1) #C3x C4x
         pes = whatcat_md.run_metadynamics_simulation()
-        
-        import matplotlib.pyplot as plt
-        x = np.linspace(2, 12, len(pes))
-        plt.figure()
-        plt.plot(x, pes)
-        plt.xlabel("CV value")
-        plt.ylabel("Free Energy (kJ/mol)")
-        plt.title("Metadynamics Free Energy Surface")
-        plt.savefig(f"{whatcat_md.pdb_name}_metadynamics_pes.png", dpi=300, bbox_inches="tight")
-        plt.close()
 
     #set default for analysis
     analysis_distances = args.dist
@@ -1360,8 +1366,11 @@ if __name__ == "__main__":
     #if data is availible set that
     if len(args.resname) == 0:
         analysis_resnames = whatcat_md.analysis_resnames
-
+    
     whatcat_analysis = whatcat_md.create_analysis()
+    if len(atom_indices_list) > 0:
+        plot.metadynamics_plotter(pes, atom_indices_list, colvar_parameters, whatcat_analysis.basename)
+
     whatcat_analysis.read_md_log()
     whatcat_analysis.equillibration_check()
 
