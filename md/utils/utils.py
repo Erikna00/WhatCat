@@ -52,6 +52,18 @@ def css_to_list(string):
 
     return list
 
+def list_to_css(lst):
+    """
+    Converts a list of stuff to a comma separated string
+    """
+
+    if len(lst) == 0:
+        raise ValueError("List is empty, cannot convert to CSS")
+
+    css_string = ", ".join([str(i) for i in lst])
+
+    return css_string
+
 def atom_idx_from_selection(selection_string, topology):
     """
     Converts a selection string to a list of atom indices.
@@ -73,6 +85,17 @@ def atom_idx_from_selection(selection_string, topology):
         raise ValueError(f"Selection '{selection_string}' did not return exactly one atom. Returned {len(selected_atoms)} atoms.")
 
     return selected_atoms.indices.tolist()[0]
+
+def metadynamics_unit_finder(atom_indicies):
+    """
+    Finds the unit of a colvar based on length
+    """
+    if len(atom_indicies) == 2:
+        return "Ångström"
+    elif len(atom_indicies) == 3 or len(atom_indicies) == 4:
+        return "degrees"
+    else:
+        raise ValueError(f"Cannot determine unit for {len(atom_indicies)} atoms. Only 2-4 atoms are supported.")
 
 ###############
 #molecule utils
