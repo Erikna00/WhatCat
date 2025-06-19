@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from utils import utils
 
 def line_plotter_2d(x, y, x_var, y_var, basename, plot_type):
     """
@@ -35,13 +36,13 @@ def line_plotter_2d(x, y, x_var, y_var, basename, plot_type):
 
     plt.xlabel(x_var)
     plt.ylabel(y_var)
-    plt.title(f"{y_var} vs {x_var}")  # Optional: Add title
+    plt.title(f"{y_var} vs {x_var}") 
     plt.savefig(f"{basename}_{plot_type}.png")
     plt.close()
 
-def heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, reporting_time, sparsity = 1, start_frame = 0):
+def time_heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, reporting_time, sparsity = 1, start_frame = 0):
     """
-    Plots a heatmap of a 2D matrix
+    Plots a heatmap of a 2D matrix infering x and y axis ticks from simulation time
     matrix = 2d symmetric matrix
     x_var = name of the x variabel
     y_var = name of the y variabel
@@ -66,17 +67,102 @@ def heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, reporti
         x_var = "Time (ns)"
         y_var = "Time (ns)"
 
-    #make the colorbar a separate subplot to avoid overlapping with the heatmap
+    heatmap(matrix, x_ticks=ticks, y_ticks=ticks, x_tick_labels=tick_labels, y_tick_labels=tick_labels, x_var = x_var, y_var = y_var, heat_var=heat_var,
+            titel=titel, basename=basename, plot_type=plot_type)
+
+
+def heatmap(matrix, x_ticks, y_ticks, x_tick_labels, y_tick_labels, x_var, y_var, heat_var, titel, basename, plot_type):
+    """
+    Plots a heatmap of a 2D matrix with user given axis ticks
+    matrix = 2d symmetric matrix
+    x_ticks = Ticks in x direction
+    y_ticks = ticks in y direction
+
+    x_var = name of the x variabel
+    y_var = name of the y variabel
+    heat_var = name of the heat variabel
+
+    titel = string of titel
+    basename: Prefix for the output filename
+    plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
+    """
+
+        #make the colorbar a separate subplot to avoid overlapping with the heatmap
     fig, ax = plt.subplots()
     cax = ax.imshow(matrix, cmap="viridis")
     fig.colorbar(cax, ax=ax, orientation="vertical", fraction=0.046, pad=0.04, label=heat_var)
 
     # Set ticks and scaled labels
-    plt.xticks(ticks, tick_labels)
-    plt.yticks(ticks, tick_labels)
+    plt.xticks(x_ticks, x_tick_labels)
+    plt.yticks(y_ticks, y_tick_labels)
 
     plt.xlabel(x_var)
     plt.ylabel(y_var)
     plt.title(titel)
     plt.savefig(f"{basename}_{plot_type}.png")
     plt.close()
+
+
+def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
+    """
+    Plots the PES from the metadyanmics simulation in 1 or 2 D
+    """
+    energy_label = "kJ/mol"
+
+    atom_indices_css = [utils.list_to_css(lst) for lst in atom_indices]  # Convert atom indices to CSS format
+
+    if len(atom_indices) == 1:
+        # If 1 colvar, pes should be a 1D array
+        if pes.ndim != 1:
+            raise ValueError("For 1 colvars, pes must be a 1D numpy array.")
+
+        #generate x data
+        x_ticks = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], 10)
+        x_var = f"{atom_indices_css[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
+
+        line_plotter_2d(x_ticks, pes, x_var = x_var, y_var = energy_label, basename = basename, plot_type= "metadynamics_pes")
+
+    elif len(atom_indices) == 2:
+        # If 2 colvars, pes should be a 2D array
+        if pes.ndim != 2:
+            raise ValueError("For 2 colvars, pes must be a 2D numpy array.")
+        
+        num_ticks = 10  # Number of ticks for both axes
+
+        x_ticks = np.linspace(0, pes.shape[1] - 1, num_ticks)  # Ensure valid indices
+        x_tick_labels = np.round(np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], num_ticks), 1)
+        x_var = f"{atom_indices_css[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
+
+        y_ticks = np.linspace(0, pes.shape[0] - 1, num_ticks, dtype=int)  # Ensure valid indices
+        y_tick_labels = np.round(np.linspace(colvar_parameters[1][0], colvar_parameters[1][1], num_ticks), 1)
+        y_var = f"{atom_indices_css[1]} ({utils.metadynamics_unit_finder(atom_indices[1])})"
+
+        titel = "temp"  # TODO
+        heatmap(pes, x_ticks, y_ticks, x_tick_labels, y_tick_labels, x_var, y_var, heat_var=energy_label, titel=titel, basename=basename, plot_type="metadynamics_pes")
+
+    elif len(atom_indices) == 3:
+        # If 3 colvars, pes should be a 3D array
+        if pes.ndim != 3:
+            raise ValueError("For 3 colvars, pes must be a 3D numpy array.")
+        
+        x_ticks = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
+        x_var = f"{atom_indices[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
+
+        y_ticks = np.linspace(colvar_parameters[1][0], colvar_parameters[1][1], pes.shape[1])
+        y_var = f"{atom_indices[1]} ({utils.metadynamics_unit_finder(atom_indices[1])})"
+
+        z_ticks = np.linspace(colvar_parameters[2][0], colvar_parameters[2][1], pes.shape[2])
+        z_var = f"{atom_indices[2]} ({utils.metadynamics_unit_finder(atom_indices[2])})"
+
+        # Flatten the grid for scatter plot
+        X, Y, Z = np.meshgrid(x_ticks, y_ticks, z_ticks, indexing='ij')
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        p = ax.scatter(X.flatten(), Y.flatten(), Z.flatten(), c=pes.flatten(), cmap='viridis')
+        fig.colorbar(p, label='Energy')
+
+        ax.set_xlabel(x_var)
+        ax.set_ylabel(y_var)
+        ax.set_zlabel(z_var)
+        plt.savefig(f"{basename}_metadynamics_pes.png")
+        plt.close()
