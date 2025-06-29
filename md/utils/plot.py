@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 from utils import utils
@@ -56,27 +57,53 @@ def time_heatmap(matrix, x_var, y_var, heat_var, titel, plot_type,  basename, re
     if start_frame == None:
         start_frame = 0
 
-    # Generate exactly 10 tick positions
+    # Calculate min and max for axis labels
     n = matrix.shape[0]
-    num_ticks = 10
-    ticks = np.linspace(0, n - 1, num_ticks, dtype=int)  # Ensure valid indices
-    tick_labels = (ticks * sparsity + start_frame) * reporting_time  # Scale labels by sparsity
+    axis_min = (start_frame) * reporting_time
+    axis_max = ((n - 1) * sparsity + start_frame) * reporting_time
 
-    if max(tick_labels) > 1000 and x_var == y_var == "Time (ps)":
-        tick_labels = tick_labels /1000
+    if axis_max > 1000 and x_var == y_var == "Time (ps)":
+        axis_min /= 1000
+        axis_max /= 1000
         x_var = "Time (ns)"
         y_var = "Time (ns)"
 
-    heatmap(matrix, x_ticks=ticks, y_ticks=ticks, x_tick_labels=tick_labels, y_tick_labels=tick_labels, x_var = x_var, y_var = y_var, heat_var=heat_var,
-            titel=titel, basename=basename, plot_type=plot_type)
+    heatmap(matrix, x_axis_min_max=(axis_min, axis_max), y_axis_min_max=(axis_min, axis_max), x_var=x_var,
+        y_var=y_var, heat_var=heat_var, titel=titel, basename=basename, plot_type=plot_type)
 
+def nice_ticks(min_max_tuple, axis_size):
+    """
+    Returns tick positions and labels using matplotlib's MaxNLocator for nice ticks.
+    
+    min_max_tuple= tuple of (start, end) for the axis range
+    axis_size= number of data points on the axis to be ticked (used for tick positions)
 
-def heatmap(matrix, x_ticks, y_ticks, x_tick_labels, y_tick_labels, x_var, y_var, heat_var, titel, basename, plot_type):
+    Returns: tuple of (indices, ticks)
+        indices: np array of tick positions
+        ticks: np array of tick labels
+    """
+    
+    locator = ticker.MaxNLocator(nbins=12, steps=[1, 2, 2.5, 3, 5, 10], prune=None, min_n_ticks=5)
+    start, end = min_max_tuple
+
+    # Get nice tick locations within the data range
+    ticks = locator.tick_values(start, end)
+
+    # If all tick labels are integer-valued floats, convert to int
+    if np.all(np.isclose(ticks, ticks.astype(int))):
+        ticks = ticks.astype(int)
+
+    # Generate tick positions based on the axis size
+    indices = np.clip(np.round((ticks - start) / (end - start) * (axis_size - 1)).astype(int), 0, axis_size - 1)
+
+    return indices, ticks
+
+def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, titel, basename, plot_type):
     """
     Plots a heatmap of a 2D matrix with user given axis ticks
     matrix = 2d symmetric matrix
-    x_ticks = Ticks in x direction
-    y_ticks = ticks in y direction
+    x_axis_min_max = tuple of (start, end) for the x axis range
+    y_axis_min_max = tuple of (start, end) for the y axis range
 
     x_var = name of the x variabel
     y_var = name of the y variabel
@@ -87,12 +114,14 @@ def heatmap(matrix, x_ticks, y_ticks, x_tick_labels, y_tick_labels, x_var, y_var
     plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
     """
 
-        #make the colorbar a separate subplot to avoid overlapping with the heatmap
+    #make the colorbar a separate subplot to avoid overlapping with the heatmap
     fig, ax = plt.subplots()
     cax = ax.imshow(matrix, cmap="viridis")
     fig.colorbar(cax, ax=ax, orientation="vertical", fraction=0.046, pad=0.04, label=heat_var)
 
-    # Set ticks and scaled labels
+    # Set ticks and scaled labels using nice_ticks
+    x_ticks, x_tick_labels = nice_ticks(x_axis_min_max, matrix.shape[1])
+    y_ticks, y_tick_labels = nice_ticks(y_axis_min_max, matrix.shape[0])
     plt.xticks(x_ticks, x_tick_labels)
     plt.yticks(y_ticks, y_tick_labels)
 
@@ -117,28 +146,22 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
             raise ValueError("For 1 colvars, pes must be a 1D numpy array.")
 
         #generate x data
-        x_ticks = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], 10)
+        x_values = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], len(pes))
         x_var = f"{atom_indices_css[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
 
-        line_plotter_2d(x_ticks, pes, x_var = x_var, y_var = energy_label, basename = basename, plot_type= "metadynamics_pes")
+        line_plotter_2d(x_values, pes, x_var = x_var, y_var = energy_label, basename = basename, plot_type= "metadynamics_pes")
 
     elif len(atom_indices) == 2:
         # If 2 colvars, pes should be a 2D array
         if pes.ndim != 2:
             raise ValueError("For 2 colvars, pes must be a 2D numpy array.")
         
-        num_ticks = 10  # Number of ticks for both axes
-
-        x_ticks = np.linspace(0, pes.shape[1] - 1, num_ticks)  # Ensure valid indices
-        x_tick_labels = np.round(np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], num_ticks), 1)
+        #generate units
         x_var = f"{atom_indices_css[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
-
-        y_ticks = np.linspace(0, pes.shape[0] - 1, num_ticks, dtype=int)  # Ensure valid indices
-        y_tick_labels = np.round(np.linspace(colvar_parameters[1][0], colvar_parameters[1][1], num_ticks), 1)
         y_var = f"{atom_indices_css[1]} ({utils.metadynamics_unit_finder(atom_indices[1])})"
 
         titel = "temp"  # TODO
-        heatmap(pes, x_ticks, y_ticks, x_tick_labels, y_tick_labels, x_var, y_var, heat_var=energy_label, titel=titel, basename=basename, plot_type="metadynamics_pes")
+        heatmap(pes, x_axis_min_max= colvar_parameters[0][0:2], y_axis_min_max= colvar_parameters[1][0:2], x_var=x_var, y_var=y_var, heat_var=energy_label, titel=titel, basename=basename, plot_type="metadynamics_pes")
 
     elif len(atom_indices) == 3:
         # If 3 colvars, pes should be a 3D array
