@@ -1356,7 +1356,7 @@ if __name__ == "__main__":
             parameter_list = utils.css_to_list(param)
             colvar_parameters.append([float(x) for x in parameter_list])
 
-        whatcat_md.add_metadynamics(atom_indices=atom_indices_list, colvar_parameters=colvar_parameters, bias_factor=4, hill_height = 1) #C3x C4x
+        whatcat_md.add_metadynamics(atom_indices=atom_indices_list, colvar_parameters=colvar_parameters, bias_factor=4, hill_height = 1)
         pes = whatcat_md.run_metadynamics_simulation()
 
     #set default for analysis
