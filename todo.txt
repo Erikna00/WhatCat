@@ -9,13 +9,13 @@ Modules
     ########
 
     #Immediate
-    # dump a restart file with timestep, reporting time, equillibration time and analysis parameters
-    #clean up metadynamics implementation to handle multipel colvars, convergence and more
-    #Add metadynamics options to the command line
-    #document metadynamics in argparse
+    # dump a restart file with timestep, reporting time, equillibration time and analysis parameters (dump commandline?)
+    #clean up metadynamics implementation to handle convergence and more
+    #rewrite -dist to -geom which can handle all geometric properties using the same syntax as -mtd
     #check if we can run MTD straight from CLI without restart
     #dump a set of restart files labelled MTD after metadynamics, add restart option for these.
     #Make a real plotting function for metadynamics
+    #implement nice_ticks for 2D line graphs
 
     #Medium term
     # figure out what automatic sparsity should be for prolif runs
@@ -40,6 +40,12 @@ Modules
 
     # work on data collection and packaging for single frames as well as whole trajectories
     #link to the MD engine to make a complete workflow
+
+    ######
+    FEP
+    ######
+
+    # Implement using GHOAT.py for SDR AB-FEP
 
 
     ######
