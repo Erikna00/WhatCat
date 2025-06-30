@@ -1453,7 +1453,9 @@ if __name__ == "__main__":
     whatcat_analysis.write_sparse_traj()
     whatcat_analysis.calc_2d_rmsd(analysis_resnames + ["backbone"])
     whatcat_analysis.remove_sparse_traj()
-    whatcat_analysis.run_prolif(analysis_resnames = analysis_resnames)
+
+    if len(analysis_resnames) > 0:
+        whatcat_analysis.run_prolif(analysis_resnames = analysis_resnames)
 
     whatcat_analysis.save_df_to_csv()
 
