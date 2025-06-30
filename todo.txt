@@ -10,25 +10,28 @@ Modules
 
     #Immediate
     # dump a restart file with timestep, reporting time, equillibration time and analysis parameters (dump commandline?)
-    #clean up metadynamics implementation to handle convergence and more
-    #rewrite -dist to -geom which can handle all geometric properties using the same syntax as -mtd
-    #check if we can run MTD straight from CLI without restart
-    #dump a set of restart files labelled MTD after metadynamics, add restart option for these.
-    #Make a real plotting function for metadynamics
-    #implement nice_ticks for 2D line graphs
+    # clean up metadynamics implementation to handle convergence and more
+    # dump a set of restart files labelled MTD after metadynamics, add restart option for these and after equillibration
+    # Debug and try 3D plotter for metadynamics
+    # Consider if mtd angle terms should be periodic
+    # Add colvar information to the pes using pandas
+    # rewrite -dist to -geom which can handle all geometric properties using the same syntax as -mtd
 
     #Medium term
-    # figure out what automatic sparsity should be for prolif runs
+    # update to openmm 8.0.3 and switch to amberff19sb + OPC water
+    # Implement periodic dumping of restart files every couple of ns
+    #Use dijkstras algorithm to annotate TS energies in metadynamics 2D and 3D plots.
+    # figure out what automatic sparsity should be for prolif runs (does not seem to need any at 5 ns)
     # fix so that analysis has a self.u
-    # makes sure all axes are divided with nice whole number ticks - use seaborne
+    # Add a -analyze option specifying a DCD file for analysis of any DCD from a run (eg equillibration or renamed files)
     # make a setup.py or similair to allow for a pip install (or refactor to compchem cookiecutter)
     # Fix RMSF parallelization bug
+    # implement nice_ticks for line graphs
 
     #Long term
     # improve metalloprotein handling https://ash.readthedocs.io/en/latest/Metalloprotein-I.html
     # add the ability to run sequential replicates of the same simulation via argparse
 
-    # add metadynamics
     # add electrostatic field analysis via own code or https://github.com/bunzela/FieldTools
      # implement cyclic equillibration until it converges well, also reimplement equillibration checks 10.1021/acs.jctc.5b00784 https://pymbar.readthedocs.io/en/master/timeseries.html
    
