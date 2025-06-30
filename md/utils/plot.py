@@ -148,7 +148,7 @@ def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, tite
             
             #change from the absolute index to the x and y axis values
             x2 = np.linspace(x_axis_min_max[0], x_axis_min_max[1], matrix.shape[1])[x]
-            y2 = np.linspace(y_axis_min_max[0], y_axis_min_max[1], matrix.shape[1])[y]
+            y2 = np.linspace(y_axis_min_max[0], y_axis_min_max[1], matrix.shape[0])[y]
 
             plt.text(x, y, f"{x2:.2f},{y2:.2f} {matrix[y, x]:.2f} kj/mol", color='white', fontsize=8, ha='center', va='bottom')
 
