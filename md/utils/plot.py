@@ -3,8 +3,11 @@ import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 from utils import utils
+from scipy.ndimage import minimum_filter
+import openmm.unit as unit
 
-def line_plotter_2d(x, y, x_var, y_var, basename, plot_type):
+
+def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= False):
     """
     Plots a 2D dataset using matplotlib.
     
@@ -98,7 +101,7 @@ def nice_ticks(min_max_tuple, axis_size):
 
     return indices, ticks
 
-def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, titel, basename, plot_type):
+def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, titel, basename, plot_type, annotate_minima=False):
     """
     Plots a heatmap of a 2D matrix with user given axis ticks
     matrix = 2d symmetric matrix
@@ -124,6 +127,30 @@ def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, tite
     y_ticks, y_tick_labels = nice_ticks(y_axis_min_max, matrix.shape[0])
     plt.xticks(x_ticks, x_tick_labels)
     plt.yticks(y_ticks, y_tick_labels)
+
+    #Add annotations for minima
+    if annotate_minima:
+        # Detect local minima (including plateaus)
+        local_min = np.isclose(minimum_filter(matrix, size=3, mode="constant", cval=np.inf), matrix)
+
+        # Create a 3x3 footprint with the center excluded to detect plateus
+        footprint = np.ones((3, 3), dtype=bool)
+        footprint[1, 1] = False
+        strict_min = (matrix < minimum_filter(matrix, footprint=footprint, mode='constant', cval=np.inf))
+
+        # Exclude plateaus: only keep points strictly less than all neighbors
+        minima_mask = local_min & strict_min
+        minima_coords = np.argwhere(minima_mask)
+
+        # Add annotations
+        for y, x in minima_coords:
+            plt.plot(x, y, 'ro')  # Red circle at each minimum
+            
+            #change from the absolute index to the x and y axis values
+            x2 = np.linspace(x_axis_min_max[0], x_axis_min_max[1], matrix.shape[1])[x]
+            y2 = np.linspace(y_axis_min_max[0], y_axis_min_max[1], matrix.shape[1])[y]
+
+            plt.text(x, y, f"{x2:.2f},{y2:.2f} {matrix[y, x]:.2f} kj/mol", color='white', fontsize=8, ha='center', va='bottom')
 
     plt.xlabel(x_var)
     plt.ylabel(y_var)
@@ -161,7 +188,9 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
         y_var = f"{atom_indices_css[1]} ({utils.metadynamics_unit_finder(atom_indices[1])})"
 
         titel = "temp"  # TODO
-        heatmap(pes, x_axis_min_max= colvar_parameters[0][0:2], y_axis_min_max= colvar_parameters[1][0:2], x_var=x_var, y_var=y_var, heat_var=energy_label, titel=titel, basename=basename, plot_type="metadynamics_pes")
+        heatmap(pes/ unit.kilojoule_per_mole, x_axis_min_max= colvar_parameters[0][0:2], y_axis_min_max= colvar_parameters[1][0:2], 
+                x_var=x_var, y_var=y_var, heat_var=energy_label, titel=titel, basename=basename, 
+                plot_type="metadynamics_pes", annotate_minima=True)
 
     elif len(atom_indices) == 3:
         # If 3 colvars, pes should be a 3D array
