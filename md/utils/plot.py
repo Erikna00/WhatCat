@@ -5,7 +5,7 @@ import pandas as pd
 from utils import utils
 from scipy.ndimage import minimum_filter
 import openmm.unit as unit
-
+import matplotlib.patheffects as patheffects
 
 def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= False):
     """
@@ -158,6 +158,76 @@ def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, tite
     plt.savefig(f"{basename}_{plot_type}.png")
     plt.close()
 
+def plot_3d_scatter(x, y, z, heat, x_var, y_var, z_var, heat_var, basename, plot_type, annotate_minima=False):
+    """
+    Plots a 3D scatter plot of x, y, z data colored by heat using matplotlib.
+    
+    Parameters:
+    x: x-axis dataset (list or numpy array)
+    y: y-axis dataset (list or numpy array)
+    z: z-axis dataset (list or numpy array)
+    heat: heat dataset (list or numpy array) for coloring the points
+
+    x_var: x-axis label (string)
+    y_var: y-axis label (string)
+    z_var: z-axis label (string)
+    heat_var: label for the heat variable (string)
+
+    basename: Prefix for the output filename
+    plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
+    """
+    
+    # Flatten the grid for scatter plot
+    X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+    fig = plt.figure(figsize=(8, 7))
+
+    ax = fig.add_axes([0, 0.05, 0.80, 0.80], projection='3d')  # [left, bottom, width, height]
+    p = ax.scatter(X.flatten(), Y.flatten(), Z.flatten(), c=heat.flatten(), cmap='viridis', s=0.01)
+
+    cax = fig.add_axes([0.89, 0.05, 0.03, 0.80])  # Colorbar: [left, bottom, width, height]
+    fig.colorbar(p, cax=cax, label='Energy')
+
+    # Set ticks and labels for x, y, z axes
+    x_ticks, x_tick_labels = nice_ticks((x[0], x[-1]), len(x))
+    y_ticks, y_tick_labels = nice_ticks((y[0], y[-1]), len(y))
+    z_ticks, z_tick_labels = nice_ticks((z[0], z[-1]), len(z))
+    ax.set_xticks(x_tick_labels)
+    ax.set_yticks(y_tick_labels)
+    ax.set_zticks(z_tick_labels)
+
+    # Add annotations for minima in 3D scatterplot
+    if annotate_minima:
+        # Detect local minima in 3D
+        local_min = np.isclose(minimum_filter(heat, size=3, mode="constant", cval=np.inf), heat)
+
+        # Create a 3x3x3 footprint with the center excluded to detect plateaus
+        footprint = np.ones((3, 3, 3), dtype=bool)
+        footprint[1, 1, 1] = False
+        strict_min = (heat < minimum_filter(heat, footprint=footprint, mode='constant', cval=np.inf))
+
+        # Exclude plateaus: only keep points strictly less than all neighbors
+        minima_mask = local_min & strict_min
+        minima_coords = np.argwhere(minima_mask)
+
+        # Add annotations
+        for z_idx, y_idx, x_idx in minima_coords:
+            x_val = np.linspace(x[0], x[-1], heat.shape[0])[z_idx]
+            y_val = np.linspace(y[0], y[-1], heat.shape[1])[y_idx]
+            z_val = np.linspace(z[0], z[-1], heat.shape[2])[x_idx]
+            ax.scatter(x_val, y_val, z_val, color='red', s=20)
+            # Plot the text after all scatter points, with a higher zorder so it's in front
+            ax.text(
+                x_val, y_val, z_val,
+                f"{x_val:.2f},{y_val:.2f},{z_val:.2f}\n{heat[z_idx, y_idx, x_idx]:.2f} kj/mol",
+                color='white', fontsize=8, ha='center', va='bottom', zorder=10,
+            )
+
+    ax.set_xlabel(x_var)
+    ax.set_ylabel(y_var)
+    ax.set_zlabel(z_var)
+    plt.savefig(f"{basename}_{plot_type}.png")
+    plt.close()
+
 
 def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
     """
@@ -197,6 +267,7 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
         if pes.ndim != 3:
             raise ValueError("For 3 colvars, pes must be a 3D numpy array.")
         
+        #prepare for 3D plot
         x_ticks = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
         x_var = f"{atom_indices[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
 
@@ -205,16 +276,6 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
 
         z_ticks = np.linspace(colvar_parameters[2][0], colvar_parameters[2][1], pes.shape[2])
         z_var = f"{atom_indices[2]} ({utils.metadynamics_unit_finder(atom_indices[2])})"
+        pes = pes / unit.kilojoule_per_mole
 
-        # Flatten the grid for scatter plot
-        X, Y, Z = np.meshgrid(x_ticks, y_ticks, z_ticks, indexing='ij')
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        p = ax.scatter(X.flatten(), Y.flatten(), Z.flatten(), c=pes.flatten(), cmap='viridis')
-        fig.colorbar(p, label='Energy')
-
-        ax.set_xlabel(x_var)
-        ax.set_ylabel(y_var)
-        ax.set_zlabel(z_var)
-        plt.savefig(f"{basename}_metadynamics_pes.png")
-        plt.close()
+        plot_3d_scatter(x_ticks, y_ticks, z_ticks, pes, x_var, y_var, z_var, energy_label, basename, plot_type="metadynamics_pes", annotate_minima=True)     
