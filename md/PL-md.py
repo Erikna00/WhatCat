@@ -551,35 +551,71 @@ class Whatcat_md_runner():
             potentialEnergy=True, temperature=True, volume=True, append = append))
         self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = append))
 
+        #since MTD is prone to crashing we run 1 ns at a time
+        cycles_to_run = production_steps // (10**6 // self.timestep)
+        remainder_steps = production_steps % (10**6 // self.timestep)
+
         print("Running production NPT metadynamics")
-        metadynamics.step(self.simulation, production_steps)
+        for cycle in range(cycles_to_run):
+            metadynamics.step(self.simulation, 10**6 // self.timestep) # run 1 ns at a time
 
-        pes = metadynamics.getFreeEnergy()
-        pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
+            print("dumped checkpoint")
 
-        #save to csv
-        if len(metadynamics.getCollectiveVariables(self.simulation)) < 3:  
-            pes_df = pd.DataFrame(pes)
-            # Add header row and index column for colvar information
-            if pes.ndim == 1:
-                # 1D case
-                colvar_range = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
-                pes_df = pd.DataFrame({"colvar": colvar_range, "free_energy": pes})
-            elif pes.ndim == 2:
-                # 2D case
-                x_range = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
-                y_range = np.linspace(colvar_parameters[1][0], colvar_parameters[1][1], pes.shape[1])
-                pes_df = pd.DataFrame(pes, index=x_range, columns=y_range)
-                pes_df.index.name = "colvar_1"
-                pes_df.columns.name = "colvar_2"
+            #dump restart files
+            self.dump_restart_files()
 
+            pes = metadynamics.getFreeEnergy()
+            pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
+
+            self.save_mtd_pes(pes)
+            plot.metadynamics_plotter(pes, self.atom_indices, self.colvar_parameters, self.pdb_name)
+
+        if remainder_steps > 0 or production_steps == 0:
+            metadynamics.step(self.simulation, remainder_steps)
+
+            #dump restart files
+            self.dump_restart_files()
+
+            pes = metadynamics.getFreeEnergy()
+            pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
+
+            self.save_mtd_pes(pes)
+            plot.metadynamics_plotter(pes, self.atom_indices, self.colvar_parameters, self.pdb_name)
+
+        return pes
+
+    def save_mtd_pes(self, pes):
+        """
+        Saves the potential energy surface (PES) from metadynamics to a file.
+        If the PES is 1D or 2D, it saves as a CSV file.
+        If the PES is 3D, it saves as a NumPy array file.
+
+        Parameters:
+            pes: np.ndarray
+                The potential energy surface data.
+            colvar_parameters: list of lists
+                Parameters for each colvar [[min_value, max_value, hill_width] ...]
+        """
+        colvar_parameters = self.colvar_parameters
+
+        if len(pes.shape) == 1:
+            # 1D case
+            colvar_range = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
+            pes_df = pd.DataFrame({"colvar": colvar_range, "free_energy": pes})
+            pes_df.to_csv(f"{self.pdb_name}_metadynamics_pes.csv", index=False)
+
+        elif len(pes.shape) == 2:
+            # 2D case
+            x_range = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
+            y_range = np.linspace(colvar_parameters[1][0], colvar_parameters[1][1], pes.shape[1])
+            pes_df = pd.DataFrame(pes, index=x_range, columns=y_range)
+            pes_df.index.name = "colvar_1"
+            pes_df.columns.name = "colvar_2"
             pes_df.to_csv(f"{self.pdb_name}_metadynamics_pes.csv", index=True)
 
         #If data is 3D we save as a  npy array file
-        elif len(metadynamics.getCollectiveVariables(self.simulation)) == 3:
+        elif len(pes.shape) == 3:
             np.save(f"{self.pdb_name}_metadynamics_pes.npy", pes)
-
-        return pes
 
     def run_prod_simulation(self, simulation = None, simulation_time_ns=None, reporting_time = None):
         """
@@ -620,23 +656,32 @@ class Whatcat_md_runner():
         print("Running production NPT")
         simulation.step(production_steps)
 
+        #dump restart files
+        self.dump_restart_files()
+        
+        return simulation
+    
+    def dump_restart_files(self):
+        """
+        Dumps the simulation state, system and integrator to XML files.
+        Also saves the final PDB file of the simulation.
+        """
+
         #save pdb
-        state = simulation.context.getState(getPositions=True)
+        state = self.simulation.context.getState(getPositions=True)
         with open(f"{self.pdb_name}_final.pdb", "w") as file:
-            PDBFile.writeFile(simulation.topology, state.getPositions(), file)
+            PDBFile.writeFile(self.simulation.topology, state.getPositions(), file)
         
         #save checkpoints of state, system and integrator
         checkpoint_filebase = f"{self.pdb_name}_restart"
-        simulation.saveState(f"{checkpoint_filebase}_state.xml")
+        self.simulation.saveState(f"{checkpoint_filebase}_state.xml")
 
         with open(f"{checkpoint_filebase}_system.xml", 'w') as file:
             file.write(XmlSerializer.serialize(self.system))
         with open(f"{checkpoint_filebase}_integrator.xml", 'w') as file:
             file.write(XmlSerializer.serialize(self.integrator))
         
-        self.simulation = simulation
-        return simulation
-    
+
     def create_analysis(self):
         """
         Creates a Whatcat_md_analysis object based on the simulation and returns it
@@ -1393,8 +1438,6 @@ if __name__ == "__main__":
         analysis_resnames = whatcat_md.analysis_resnames
     
     whatcat_analysis = whatcat_md.create_analysis()
-    if len(atom_indices_list) > 0:
-        plot.metadynamics_plotter(pes, atom_indices_list, colvar_parameters, whatcat_analysis.basename)
 
     whatcat_analysis.read_md_log()
     whatcat_analysis.equillibration_check()
