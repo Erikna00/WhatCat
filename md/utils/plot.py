@@ -38,6 +38,7 @@ def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= Fa
         #if y is list or 1d array
         plt.plot(x, y, label=y_var)
 
+    plt.xlim(min(x), max(x))  # Set x limits to avoid overhang
     plt.xlabel(x_var)
     plt.ylabel(y_var)
     plt.title(f"{y_var} vs {x_var}") 
@@ -192,8 +193,13 @@ def plot_3d_scatter(x, y, z, heat, x_var, y_var, z_var, heat_var, basename, plot
     y_ticks, y_tick_labels = nice_ticks((y[0], y[-1]), len(y))
     z_ticks, z_tick_labels = nice_ticks((z[0], z[-1]), len(z))
     ax.set_xticks(x_tick_labels)
+    ax.set_xticklabels(x_tick_labels, rotation=0, ha='center', va = "bottom")
     ax.set_yticks(y_tick_labels)
-    ax.set_zticks(z_tick_labels)
+    ax.set_yticklabels(y_tick_labels, rotation=-45, ha='center', va = "center")
+    ax.set_zticks(z_tick_labels, z_tick_labels, rotation=0)
+
+    #set the axis limits to avoid overhang
+    ax.set(xlim = (x[0], x[-1]), ylim = (y[0], y[-1]), zlim = (z[0], z[-1]))
 
     # Add annotations for minima in 3D scatterplot
     if annotate_minima:
@@ -211,15 +217,15 @@ def plot_3d_scatter(x, y, z, heat, x_var, y_var, z_var, heat_var, basename, plot
 
         # Add annotations
         for z_idx, y_idx, x_idx in minima_coords:
-            x_val = np.linspace(x[0], x[-1], heat.shape[0])[z_idx]
-            y_val = np.linspace(y[0], y[-1], heat.shape[1])[y_idx]
-            z_val = np.linspace(z[0], z[-1], heat.shape[2])[x_idx]
+            x_val = x[z_idx]
+            y_val = y[y_idx]
+            z_val = z[x_idx]
             ax.scatter(x_val, y_val, z_val, color='red', s=20)
             # Plot the text after all scatter points, with a higher zorder so it's in front
             ax.text(
                 x_val, y_val, z_val,
                 f"{x_val:.2f},{y_val:.2f},{z_val:.2f}\n{heat[z_idx, y_idx, x_idx]:.2f} kj/mol",
-                color='white', fontsize=8, ha='center', va='bottom', zorder=10,
+                color='black', fontsize=8, ha='center', va='bottom', zorder=50,
             )
 
     ax.set_xlabel(x_var)
