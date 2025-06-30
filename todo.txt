@@ -10,11 +10,8 @@ Modules
 
     #Immediate
     # dump a restart file with timestep, reporting time, equillibration time and analysis parameters (dump commandline?)
-    # clean up metadynamics implementation to handle convergence and more
-    # dump a set of restart files labelled MTD after metadynamics, add restart option for these and after equillibration
-    # Debug and try 3D plotter for metadynamics
-    # Consider if mtd angle terms should be periodic
-    # Add colvar information to the pes using pandas
+    # handle convergence better with MTD
+    # Consider if mtd angle terms should be
     # rewrite -dist to -geom which can handle all geometric properties using the same syntax as -mtd
 
     #Medium term
