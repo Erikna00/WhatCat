@@ -186,7 +186,7 @@ def plot_3d_scatter(x, y, z, heat, x_var, y_var, z_var, heat_var, basename, plot
     p = ax.scatter(X.flatten(), Y.flatten(), Z.flatten(), c=heat.flatten(), cmap='viridis', s=0.01)
 
     cax = fig.add_axes([0.89, 0.05, 0.03, 0.80])  # Colorbar: [left, bottom, width, height]
-    fig.colorbar(p, cax=cax, label='Energy')
+    fig.colorbar(p, cax=cax, label=f"{heat_var}")
 
     # Set ticks and labels for x, y, z axes
     x_ticks, x_tick_labels = nice_ticks((x[0], x[-1]), len(x))
@@ -224,13 +224,13 @@ def plot_3d_scatter(x, y, z, heat, x_var, y_var, z_var, heat_var, basename, plot
             # Plot the text after all scatter points, with a higher zorder so it's in front
             ax.text(
                 x_val, y_val, z_val,
-                f"{x_val:.2f},{y_val:.2f},{z_val:.2f}\n{heat[z_idx, y_idx, x_idx]:.2f} kj/mol",
+                f"{x_val:.2f},{y_val:.2f},{z_val:.2f}\n{heat[z_idx, y_idx, x_idx]:.2f} {heat_var}",
                 color='black', fontsize=8, ha='center', va='bottom', zorder=50,
             )
 
-    ax.set_xlabel(x_var)
-    ax.set_ylabel(y_var)
-    ax.set_zlabel(z_var)
+    ax.set_xlabel(f"x: {x_var}")
+    ax.set_ylabel(f"y {y_var}")
+    ax.set_zlabel(f"z {z_var}")
     plt.savefig(f"{basename}_{plot_type}.png")
     plt.close()
 
