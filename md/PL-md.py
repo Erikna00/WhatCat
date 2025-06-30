@@ -444,6 +444,10 @@ class Whatcat_md_runner():
         units = []
         bias_variables = []
 
+        #save MTD parameters in class
+        self.colvar_parameters = colvar_parameters
+        self.atom_indices = atom_indices
+
         for index in range(0, len(atom_indices)):
 
             if len(atom_indices[index]) == 2:
@@ -553,7 +557,27 @@ class Whatcat_md_runner():
         pes = metadynamics.getFreeEnergy()
         pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
 
-        pd.DataFrame(pes).to_csv(f"{self.pdb_name}_metadynamics_pes.csv", index=False)
+        #save to csv
+        if len(metadynamics.getCollectiveVariables(self.simulation)) < 3:  
+            pes_df = pd.DataFrame(pes)
+            # Add header row and index column for colvar information
+            if pes.ndim == 1:
+                # 1D case
+                colvar_range = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
+                pes_df = pd.DataFrame({"colvar": colvar_range, "free_energy": pes})
+            elif pes.ndim == 2:
+                # 2D case
+                x_range = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], pes.shape[0])
+                y_range = np.linspace(colvar_parameters[1][0], colvar_parameters[1][1], pes.shape[1])
+                pes_df = pd.DataFrame(pes, index=x_range, columns=y_range)
+                pes_df.index.name = "colvar_1"
+                pes_df.columns.name = "colvar_2"
+
+            pes_df.to_csv(f"{self.pdb_name}_metadynamics_pes.csv", index=True)
+
+        #If data is 3D we save as a  npy array file
+        elif len(metadynamics.getCollectiveVariables(self.simulation)) == 3:
+            np.save(f"{self.pdb_name}_metadynamics_pes.npy", pes)
 
         return pes
 
@@ -1316,7 +1340,8 @@ if __name__ == "__main__":
     parser.add_argument("--debug", type = bool, default= False, help="debug mode, prints more information while running", required=False)
     
     parser.add_argument("-mtd_cv", "--metadynamics_cv", type = str, action="append", default= [], help="""a pair (bond), triple (angle) or quartet (dihedral) of atom selectors eg "resid 131 and name OG1, resname UNK and name N1x" 
-                        which you want to use as colvars for metadynamics. specify using MDAnalysis/VMD natural language queries\n  Dihedrals are assumed to be periodic, E(-180)=E(180)""", required=False)
+                        which you want to use as colvars for metadynamics. specify using MDAnalysis/VMD natural language queries\n  Dihedrals are assumed to be periodic, eg  E(-180)=E(180) if no aperiodic CV is included.
+                        Beware that some CV:s can cause "Particle position is NaN" errors. If so reconsider your CV choice""", required=False)
     parser.add_argument("-mtd_p", "--metadynamics_parameters", type = str, action="append", default= [], help="A triple of min/max values as well as bias width. In Ångström and degrees." \
     """\nFor bonds, 0.5Å is appropriate whereas 20 degrees is good for angles/dihedrals \nFor example "2, 8, 0.5" """, required = False)
     parser.add_argument("-mtd_bias", "--metadynamics_bias_factor", type = float, default= 4, help="The colvars will be sampled as if they were at temp*bias_factor. Higher = we will sample higher energy transitions", required = False)
@@ -1389,7 +1414,7 @@ if __name__ == "__main__":
 
     whatcat_analysis.save_df_to_csv()
 
-    print(whatcat_analysis.time_df.head())
-    print(whatcat_analysis.residue_df.head())
+    #print(whatcat_analysis.time_df.head())
+    #print(whatcat_analysis.residue_df.head())
 
 
