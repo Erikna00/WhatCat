@@ -1,12 +1,17 @@
 import MDAnalysis as mda 
 import MDAnalysis.transformations as trans
+from rdkit import Chem
+from openbabel import openbabel
+
+import pandas as pd
+import numpy as np
+
 import os
 from multiprocessing import Pool
 import json
-from rdkit import Chem
-from openbabel import openbabel
 import tempfile
 import warnings
+
 #Filter biopython warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="Bio.Application")
 
@@ -64,6 +69,11 @@ def list_to_css(lst):
 
     return css_string
 
+
+##################
+#Metadynamics utils
+##################
+
 def atom_idx_from_selection(selection_string, topology):
     """
     Converts a selection string to a list of atom indices.
@@ -96,6 +106,28 @@ def metadynamics_unit_finder(atom_indicies):
         return "degrees"
     else:
         raise ValueError(f"Cannot determine unit for {len(atom_indicies)} atoms. Only 2-4 atoms are supported.")
+    
+def metadynamics_pes_convergence_reader(pdb_name):
+
+    pes_rmsd_lst = pd.read_csv(f"{pdb_name}_mtd_convergence.csv")["PES RMSD (kJ/mol)"].to_numpy().tolist()
+    simulation_dump_lst = pd.read_csv(f"{pdb_name}_mtd_convergence.csv")["Simulation time (ns)"].to_numpy().tolist()
+
+    if os.path.exists(f"{pdb_name}_metadynamics_pes.csv"):
+        # Try to read as 2D (with index and header)
+        pes_df = pd.read_csv(f"{pdb_name}_metadynamics_pes.csv", header=0)
+        if pes_df.shape[1] > 2:
+            # 2D case: drop index column if present
+            pes_last = pes_df.set_index(pes_df.columns[0]).to_numpy()
+        elif pes_df.shape[1] == 2:
+            # 1D case: just get the free_energy column
+            pes_last = pes_df["free_energy"].to_numpy()
+        else:
+            raise ValueError("Unexpected CSV format for metadynamics PES.")
+
+    elif os.path.exists(f"{pdb_name}_metadynamics_pes.npy"):
+        pes_last = np.load(f"{pdb_name}_metadynamics_pes.npy")
+    
+    return pes_rmsd_lst, simulation_dump_lst, pes_last
 
 ###############
 #molecule utils
