@@ -1,6 +1,6 @@
 from openmm.app import *
 from openmm import *
-from openmm.unit import *
+import openmm.unit as unit
 
 from openff.toolkit import Molecule
 from openmmforcefields.generators import SystemGenerator
@@ -90,8 +90,8 @@ class Whatcat_md_runner():
 
         self.pdb_name = os.path.splitext(pdb_file)[0]
 
-        self.temperature = 300 * kelvin
-        self.pressure = 1 * bar
+        self.temperature = 300 * unit.kelvin
+        self.pressure = 1 * unit.bar
 
         try:
             self.script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -197,7 +197,7 @@ class Whatcat_md_runner():
         
         #TODO add accellerated MD without colvars or metadynamics with colvars 
         #forcefield kwargs
-        forcefield_kwargs = {'constraints': HBonds, 'rigidWater': True, 'removeCMMotion': True, 'hydrogenMass' : 1.5 * amu }
+        forcefield_kwargs = {'constraints': HBonds, 'rigidWater': True, 'removeCMMotion': True, 'hydrogenMass' : 1.5 * unit.amu }
 
         #if simulating with ligand
         if len(self.ligand_files) > 0:
@@ -293,7 +293,7 @@ class Whatcat_md_runner():
             modeller.deleteWater()
         if solvate > 0:
             #add solvent box
-            modeller.addSolvent(system_generator.forcefield, padding=1.0*nanometer)
+            modeller.addSolvent(system_generator.forcefield, padding=1.0*unit.nanometer)
 
         # Create the system using the SystemGenerator
         system = system_generator.create_system(modeller.topology)
@@ -317,7 +317,7 @@ class Whatcat_md_runner():
             platform = Platform.getPlatformByName(self.platform)
 
         #set up simulation
-        self.integrator = LangevinMiddleIntegrator(300*kelvin, 1/picosecond, timestep * femtoseconds)
+        self.integrator = LangevinMiddleIntegrator(self.temperature, 1/unit.picosecond, timestep * unit.femtoseconds)
         simulation = Simulation(modeller.topology, system, self.integrator, platform = platform)
         simulation.context.setPositions(modeller.positions)
 
@@ -356,7 +356,7 @@ class Whatcat_md_runner():
         simulation.loadState(f"{checkpoint_filebase}_state.xml")
 
         self.simulation = simulation
-        self.timestep = int(simulation.integrator.getStepSize().value_in_unit(femtosecond))
+        self.timestep = int(simulation.integrator.getStepSize().value_in_unit(unit.femtosecond))
         print(f"\nSimulation restarted with stepsize of {self.timestep} fs")
 
         self.simulation = simulation
@@ -401,7 +401,7 @@ class Whatcat_md_runner():
 
         #reset simulation time to 0 for decent analysis
         simulation.currentStep = 0  # Reset step counter
-        simulation.context.setTime(0 * picoseconds)  # Reset simulation time to 0 ps
+        simulation.context.setTime(0 * unit.picoseconds)  # Reset simulation time to 0 ps
 
         #remove equillibration reporter
         simulation.reporters.clear()
@@ -456,7 +456,7 @@ class Whatcat_md_runner():
                 cv.addBond(atom_indices[index][0], atom_indices[index][1], [])
                 cv_force = CustomCVForce("bond")
                 cv_force.addCollectiveVariable("bond", cv)
-                units.append(angstrom)
+                units.append(unit.angstrom)
                 periodic_list.append(False)
             
             elif len(atom_indices[index]) == 3:
@@ -465,7 +465,7 @@ class Whatcat_md_runner():
                 cv.addAngle(atom_indices[index][0], atom_indices[index][1], atom_indices[index][2], [])
                 cv_force = CustomCVForce("angle")
                 cv_force.addCollectiveVariable("angle", cv)
-                units.append(degree)
+                units.append(unit.degree)
                 periodic_list.append(False)
 
             elif len(atom_indices[index]) == 4:
@@ -474,7 +474,7 @@ class Whatcat_md_runner():
                 cv.addTorsion(atom_indices[index][0], atom_indices[index][1], atom_indices[index][2], atom_indices[index][3], [])
                 cv_force = CustomCVForce("dihedral")
                 cv_force.addCollectiveVariable("dihedral", cv)
-                units.append(degree)
+                units.append(unit.degree)
                 periodic_list.append(True)
 
             else:
@@ -497,7 +497,7 @@ class Whatcat_md_runner():
             variables=bias_variables,
             temperature=self.temperature,
             biasFactor=bias_factor,
-            height=hill_height * kilojoule_per_mole,
+            height=hill_height * unit.kilojoule_per_mole,
             frequency=hill_frequency,
             saveFrequency= 1 * hill_frequency,
             biasDir= os.getcwd() #take biases from CLI position
@@ -552,35 +552,64 @@ class Whatcat_md_runner():
         self.simulation.reporters.append(DCDReporter(self.traj_file, reporting_frequency, append = append))
 
         #since MTD is prone to crashing we run 1 ns at a time
-        cycles_to_run = production_steps // (10**6 // self.timestep)
-        remainder_steps = production_steps % (10**6 // self.timestep)
+        dump_freq = 0.1 #ns
+        steps_per_cycle = int(dump_freq * 1e6 // self.timestep)
+        cycles_to_run = production_steps // steps_per_cycle
+        remainder_steps = production_steps % steps_per_cycle
+
+        pes_last = None
+        pes_rmsd_lst = []
+        simulation_dump_lst = []
+
+        #if restarting read already dumped csv file and pes
+        if self.restart and os.path.exists(f"{self.pdb_name}_metadynamics_pes.csv") or os.path.exists(f"{self.pdb_name}_metadynamics_pes.npy") and f"{self.pdb_name}_mtd_convergence.csv":
+            pes_rmsd_lst, simulation_dump_lst, pes_last = utils.metadynamics_pes_convergence_reader(self.pdb_name)
 
         print("Running production NPT metadynamics")
         for cycle in range(cycles_to_run):
-            metadynamics.step(self.simulation, 10**6 // self.timestep) # run 1 ns at a time
+            metadynamics.step(self.simulation, steps_per_cycle) # run dump_freq ns at a time
 
             print("dumped checkpoint")
 
             #dump restart files
             self.dump_restart_files()
 
-            pes = metadynamics.getFreeEnergy()
+            pes = metadynamics.getFreeEnergy().value_in_unit(unit.kilojoule_per_mole)
             pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
 
+            if pes_last is not None:
+                #calculate rmsd of PES towards last pes to see if it is converged
+                pes_rmsd = np.sqrt(np.mean(np.exp2(pes - pes_last))) 
+                pes_rmsd_lst.append(pes_rmsd)
+                simulation_dump_lst.append(self.simulation.context.getTime().value_in_unit(unit.nanosecond)) 
+                plot.line_plotter_2d(simulation_dump_lst, pes_rmsd_lst, "Simulation time (ns)", "PES RMSD (kJ/mol)", self.pdb_name, "mtd_convergence", force_zero_start=True)
+                
+            pes_last = pes
             self.save_mtd_pes(pes)
             plot.metadynamics_plotter(pes, self.atom_indices, self.colvar_parameters, self.pdb_name)
-
+            
         if remainder_steps > 0 or production_steps == 0:
             metadynamics.step(self.simulation, remainder_steps)
 
             #dump restart files
             self.dump_restart_files()
 
-            pes = metadynamics.getFreeEnergy()
+            pes = metadynamics.getFreeEnergy().value_in_unit(unit.kilojoule_per_mole)
             pes = pes - np.min(pes) #shift the  free energy so lowest energy is 0 kJ/mol
+
+            if pes_last is not None:
+                #calculate rmsd of PES towards last pes to see if it is converged
+                pes_rmsd = np.sqrt(np.mean(np.exp2(pes - pes_last))) 
+                pes_rmsd_lst.append(pes_rmsd)
+                simulation_dump_lst.append(self.simulation.context.getTime().value_in_unit(unit.nanosecond)) 
+                plot.line_plotter_2d(simulation_dump_lst, pes_rmsd_lst, "Simulation time (ns)", "PES RMSD (kJ/mol)", self.pdb_name, "mtd_convergence", force_zero_start=True)
 
             self.save_mtd_pes(pes)
             plot.metadynamics_plotter(pes, self.atom_indices, self.colvar_parameters, self.pdb_name)
+        
+        #save convergence info to csv
+        pes_rmsd_df = pd.DataFrame({"Simulation time (ns)": simulation_dump_lst, "PES RMSD (kJ/mol)": pes_rmsd_lst})
+        pes_rmsd_df.to_csv(f"{self.pdb_name}_mtd_convergence.csv", index=False)
 
         return pes
 
@@ -1360,7 +1389,7 @@ if __name__ == "__main__":
                                                                         "This is easilly done by checking ChimeraX dockpreps charge assignment when running dockprep."
                                                                         "WARNING charges MUST be assigned in the sdf file, use -cc True to autoassign based on pH"
                                                                         "or whatcat/md/molecule_inspector.ipynb which both converts files and visuallizes result")) 
-    parser.add_argument("--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from restart xml files if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
+    parser.add_argument("-restart", "--restart", type = str, default= "False", choices=["true", "True", "false", "False"], help="Restarts the simulation from restart xml files if set to True \nRequieres that pdb is set to pdbname_final.pdb", required=False)
     parser.add_argument("--platform", type = str, default= "CUDA", choices=["CUDA", "OPENCL", "CPU"], help="Sets the simulation platform, default = CUDA", required=False)
 
     parser.add_argument("--pdbfixer", type = int, default = 2, help = ("0, 1, 2 depending on if your structure shall be PDBfixed." 
