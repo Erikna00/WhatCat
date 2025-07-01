@@ -724,7 +724,7 @@ class Whatcat_md_runner():
 
 class Whatcat_md_analysis:
     
-    def __init__(self, basename, topology, traj_file, md_log, reporting_time, metadynamics = False,  align = True, plot = True, start_time=0):
+    def __init__(self, basename, topology, traj_file, md_log, reporting_time, metadynamics = False,  align = True, plot = True):
         """
         This class analyzes MD simulations by wrapping MDAnalysis in a parallelized executor using
         divide and conquer methodologies when the MDAnalysis function does not have native parallelization
@@ -747,6 +747,8 @@ class Whatcat_md_analysis:
         """
         self.traj_file = traj_file
         self.topology = topology
+        self.u = mda.Universe(topology, traj_file, dt=reporting_time)
+
         self.basename = basename
         self.align = align
         self.plot = plot
@@ -779,9 +781,7 @@ class Whatcat_md_analysis:
             also adds columns to self.time_df
         """
 
-        #dt is in ps
-        time_offset = 0 #redundant due to centering
-        u = mda.Universe(self.topology, self.traj_file, dt=self.reporting_time, time_offset=time_offset)
+        u = self.u
 
         #load state data reporter information from memory
         column_names = ["Step", "Potential Energy (kJ/mole)", "Temperature (K)", "Box Volume (nm^3)"]
@@ -882,7 +882,7 @@ class Whatcat_md_analysis:
             pair_selections.append((parts[0], parts[1]))
         
         # Create the MDAnalysis Universe.
-        u = mda.Universe(self.topology, self.traj_file)
+        u = self.u
         
         # Set up AnalysisFromFunction.
         # Here, we pass u.trajectory as the trajectory to iterate over and u.atoms as the AtomGroup
@@ -924,7 +924,7 @@ class Whatcat_md_analysis:
         selection = "protein and name CA and not resname ACE NME"
 
         # Load Universe once to compute the average structure.
-        u = mda.Universe(self.topology, self.traj_file)
+        u = self.u
         
         # Compute the average structure (for alignment reference)
         avg_pdb=f"{self.basename}_avg_structure.pdb"
@@ -1000,7 +1000,7 @@ class Whatcat_md_analysis:
         print("computing 1D RMSD")
         start_time = time.time()
 
-        u = mda.Universe(self.topology, self.traj_file)
+        u = self.u
 
         ref = u.copy()   # Create a copy of the universe in the first frame
         ref.trajectory[0] #set frame to 0 explicitlly
@@ -1051,7 +1051,7 @@ class Whatcat_md_analysis:
         if legend is None:
             legend = selection
 
-        u = mda.Universe(self.topology, self.traj_file)
+        u = self.u
 
         atomgroup = u.select_atoms(selection)
         rga = mda.analysis.base.AnalysisFromFunction(analysis.radgyr, u.trajectory, atomgroup, atomgroup.masses, total_mass=np.sum(atomgroup.masses)).run(backend="multiprocessing", n_workers= self.n_jobs)
@@ -1086,7 +1086,7 @@ class Whatcat_md_analysis:
         """
         
         #calculate total frames in query 
-        u = mda.Universe(self.topology, self.traj_file)
+        u = self.u
         tot_frames = u.trajectory.n_frames
 
         #add args to class variables to plot correctlly later on
@@ -1159,8 +1159,7 @@ class Whatcat_md_analysis:
             self.write_sparse_traj()
             delete = True
         
-        u = mda.Universe(self.topology, self.sparse_traj)
-        n_frames = u.trajectory.n_frames
+        n_frames = self.u.trajectory.n_frames
 
         # Generate all (i, j) pairs for the upper triangle where j > i
         frame_pairs = [(i, j) for i in range(n_frames) for j in range(i + 1, n_frames)]
@@ -1265,8 +1264,8 @@ class Whatcat_md_analysis:
         print("Computing interaction fingerprints")
         start_time = time.time()
 
-        # load topology and trajectory
-        u = mda.Universe(self.topology, self.traj_file)
+        # load universe from self
+        u = self.u
 
         #create a dictionary of dataframes to store the interactions
         interaction_df_dict = {}
