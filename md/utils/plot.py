@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 from utils import utils
 from scipy.ndimage import minimum_filter
-import openmm.unit as unit
-import matplotlib.patheffects as patheffects
 
-def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= False):
+def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= False, force_zero_start = False):
     """
     Plots a 2D dataset using matplotlib.
     
@@ -16,8 +14,12 @@ def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= Fa
     y: y-axis dataset (list, numpy array, or pandas Series/DataFrame)
     xvar: x-axis label (string)
     yvar: y-axis label (string)
+
     basename: Prefix for the output filename
     plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
+
+    annotate_minima: If True, annotate local minima in the plot
+    force_zero_start: If True, set x-axis to start at 0, otherwise use min(x) as start.
     
     Handles multiple y columns by adding a legend.
     if x_var == "Time (ps)" we do a check to see if we can convert to ns
@@ -38,7 +40,31 @@ def line_plotter_2d(x, y, x_var, y_var, basename, plot_type, annotate_minima= Fa
         #if y is list or 1d array
         plt.plot(x, y, label=y_var)
 
-    plt.xlim(min(x), max(x))  # Set x limits to avoid overhang
+    #set x0=0 if force_zero_start is True
+    if force_zero_start:
+        plt.xlim(0, max(x)) 
+    else:
+        plt.xlim(min(x), max(x))  # Set x limits to avoid overhang
+
+    #Annotate local minima if requested
+    if annotate_minima:
+        # Detect local minima (including plateaus)
+        local_min = np.isclose(minimum_filter(y, size=3, mode="constant", cval=np.inf), y)
+
+        # Create a 3x3 footprint with the center excluded to detect plateus
+        footprint = np.ones((3,), dtype=bool)
+        footprint[1] = False
+        strict_min = (y < minimum_filter(y, footprint=footprint, mode='constant', cval=np.inf))
+
+        # Exclude plateaus: only keep points strictly less than all neighbors
+        minima_mask = local_min & strict_min
+        minima_indices = np.where(minima_mask)[0] #[0] to get the indices from the boolean mask
+
+        # Add annotations
+        for idx in minima_indices:
+            plt.plot(x[idx], y[idx], 'ro')  # Red circle at each minimum
+            plt.text(x[idx], y[idx], f"{x[idx]:.2f}:{y[idx]:.2f} {y_var}", color='black', fontsize=8, ha='center', va='bottom')
+
     plt.xlabel(x_var)
     plt.ylabel(y_var)
     plt.title(f"{y_var} vs {x_var}") 
@@ -116,6 +142,8 @@ def heatmap(matrix, x_axis_min_max, y_axis_min_max, x_var, y_var, heat_var, tite
     titel = string of titel
     basename: Prefix for the output filename
     plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
+
+    annotate_minima: If True, annotate local minima in the heatmap
     """
 
     #make the colorbar a separate subplot to avoid overlapping with the heatmap
@@ -176,6 +204,7 @@ def plot_3d_scatter(x, y, z, heat, x_var, y_var, z_var, heat_var, basename, plot
 
     basename: Prefix for the output filename
     plot_type = ending of saved file name, corresponding to the type of plot, eg RMSD
+    annotate_minima: If True, annotate local minima in the plot
     """
     
     # Flatten the grid for scatter plot
@@ -252,7 +281,7 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
         x_values = np.linspace(colvar_parameters[0][0], colvar_parameters[0][1], len(pes))
         x_var = f"{atom_indices_css[0]} ({utils.metadynamics_unit_finder(atom_indices[0])})"
 
-        line_plotter_2d(x_values, pes, x_var = x_var, y_var = energy_label, basename = basename, plot_type= "metadynamics_pes")
+        line_plotter_2d(x_values, pes, x_var = x_var, y_var = energy_label, basename = basename, plot_type= "metadynamics_pes", annotate_minima=True)
 
     elif len(atom_indices) == 2:
         # If 2 colvars, pes should be a 2D array
@@ -264,7 +293,7 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
         y_var = f"{atom_indices_css[1]} ({utils.metadynamics_unit_finder(atom_indices[1])})"
 
         titel = "temp"  # TODO
-        heatmap(pes/ unit.kilojoule_per_mole, x_axis_min_max= colvar_parameters[0][0:2], y_axis_min_max= colvar_parameters[1][0:2], 
+        heatmap(pes, x_axis_min_max= colvar_parameters[0][0:2], y_axis_min_max= colvar_parameters[1][0:2], 
                 x_var=x_var, y_var=y_var, heat_var=energy_label, titel=titel, basename=basename, 
                 plot_type="metadynamics_pes", annotate_minima=True)
 
@@ -282,6 +311,6 @@ def metadynamics_plotter(pes, atom_indices, colvar_parameters, basename):
 
         z_ticks = np.linspace(colvar_parameters[2][0], colvar_parameters[2][1], pes.shape[2])
         z_var = f"{atom_indices[2]} ({utils.metadynamics_unit_finder(atom_indices[2])})"
-        pes = pes / unit.kilojoule_per_mole
+        pes = pes
 
         plot_3d_scatter(x_ticks, y_ticks, z_ticks, pes, x_var, y_var, z_var, energy_label, basename, plot_type="metadynamics_pes", annotate_minima=True)     
