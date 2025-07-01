@@ -108,6 +108,13 @@ def metadynamics_unit_finder(atom_indicies):
         raise ValueError(f"Cannot determine unit for {len(atom_indicies)} atoms. Only 2-4 atoms are supported.")
     
 def metadynamics_pes_convergence_reader(pdb_name):
+    """
+    Reads assorted convergence files from a metadynamics run.
+    
+    Parameters:
+        pdb_name : str 
+            The base name of the PDB file used in the metadynamics run.
+    """
 
     pes_rmsd_lst = pd.read_csv(f"{pdb_name}_mtd_convergence.csv")["PES RMSD (kJ/mol)"].to_numpy().tolist()
     simulation_dump_lst = pd.read_csv(f"{pdb_name}_mtd_convergence.csv")["Simulation time (ns)"].to_numpy().tolist()
