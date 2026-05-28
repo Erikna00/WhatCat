@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "WhatCat"
+version = "0.1.0"
+description = "A toolkit for setting up and analyzing OpenMM molecular dynamics simulations, including metadynamics and analysis tools."
+authors = [
+    { name = "Erik Sundén, Per-Olof Syrén group at KTH Sweden", email = "ersund@kth.se" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "openmm>=8.3.0",
+    "openmmforcefields",
+    "openff-toolkit",
+    "pdbfixer",
+    "rdkit",
+    "MDAnalysis",
+    "mdaencore",
+    "mdtraj",
+    "prolif",
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib",
+]
+
+[project.urls]
+Homepage = "https://github.com/Erikna00/WhatCat"
+
+[project.scripts]
+whatcat-md = "whatcat.md.md:main"
+whatcat-efield = "whatcat.md.utils.efield:main"
